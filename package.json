@@ -1,0 +1,88 @@
+{
+  "name": "sd-computations",
+  "version": "0.1.0",
+  "description": "SilverDecisions computations module",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SilverDecisions/sd-computations.git"
+  },
+  "keywords": [
+    "SilverDecisions",
+    "computations"
+  ],
+  "author": "Michał Wasiluk, Bogumił Kamiński",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/SilverDecisions/sd-computations/issues"
+  },
+  "homepage": "https://github.com/SilverDecisions/sd-computations#readme",
+  "browserify": {
+    "transform": [
+      [
+        "babelify",
+        {
+          "presets": [
+            "es2015"
+          ],
+          "plugins": [
+            "transform-class-properties",
+            "transform-object-assign",
+            [
+              "babel-plugin-transform-builtin-extend",
+              {
+                "globals": [
+                  "Error"
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    ]
+  },
+  "devDependencies": {
+    "babel-plugin-transform-builtin-extend": "^1.1.2",
+    "babel-plugin-transform-class-properties": "^6.11.5",
+    "babel-plugin-transform-object-assign": "^6.8.0",
+    "babel-preset-es2015": "^6.14.0",
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.0",
+    "chalk": "^1.1.3",
+    "del": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-filelist": "^1.0.0",
+    "gulp-load-plugins": "^1.2.4",
+    "gulp-plumber": "^1.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-replace": "^0.5.4",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.3",
+    "gulp-util": "^3.0.7",
+    "jasmine": "^2.5.2",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-jasmine": "^1.0.2",
+    "karma-phantomjs-launcher": "^1.0.2",
+    "merge-stream": "^1.0.0",
+    "phantomjs": "^2.1.7",
+    "stringify": "^5.1.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "yargs": "^6.0.0"
+  },
+  "dependencies": {
+    "idb": "^2.0.0",
+    "lodash": "^4.17.4",
+    "sd-expression-engine": "latest",
+    "sd-model": "latest",
+    "sd-utils": "latest"
+  }
+}
