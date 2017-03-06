@@ -1,7 +1,7 @@
 import {log} from 'sd-utils'
 import {JOB_STATUS} from "./job-status";
 import {Job} from "./job";
-import *  as _ from 'lodash'
+import {Utils} from "sd-utils";
 import {ExecutionContext} from "./execution-context";
 import {Step} from "./step";
 import {JobInterruptedException} from "./exceptions/job-interrupted-exception";
@@ -18,7 +18,7 @@ export class SimpleJob extends Job {
     }
 
     getStep(stepName) {
-        return _.find(this.steps, s=>s.name == stepName);
+        return Utils.find(this.steps, s=>s.name == stepName);
     }
 
     doExecute(execution) {

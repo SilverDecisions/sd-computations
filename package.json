@@ -81,7 +81,6 @@
   },
   "dependencies": {
     "idb": "^2.0.0",
-    "lodash": "^4.17.4",
     "sd-expression-engine": "latest",
     "sd-model": "latest",
     "sd-utils": "latest"

@@ -1,6 +1,6 @@
-import * as _ from "lodash";
 import {PARAMETER_TYPE} from "./job-parameter-definition";
 import {Utils} from "sd-utils";
+
 export class JobParameters{
     definitions = [];
     values={};
@@ -28,9 +28,9 @@ export class JobParameters{
     /*get or set value by path*/
     value(path, value){
         if (arguments.length === 1) {
-            return  _.get(this.values, path, null);
+            return  Utils.get(this.values, path, null);
         }
-        _.set(this.values, path, value);
+        Utils.set(this.values, path, value);
         return value;
     }
 

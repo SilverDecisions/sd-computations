@@ -1,6 +1,6 @@
 import {JobRepository} from "./job-repository";
 import {default as idb} from "idb";
-import * as _ from "lodash";
+import {Utils} from "sd-utils";
 import {JobExecution} from "../job-execution";
 import {JobInstance} from "../job-instance";
 import {StepExecution} from "../step-execution";
@@ -132,7 +132,7 @@ export class IdbJobRepository extends JobRepository {
         var jobParameters = job.createJobParameters(dto.jobParameters.values);
         var jobExecution = new JobExecution(jobInstance, jobParameters, dto.id);
         var executionContext = this.reviveExecutionContext(dto.executionContext);
-        return _.mergeWith(jobExecution, dto, (objValue, srcValue, key, object, source, stack)=> {
+        return Utils.mergeWith(jobExecution, dto, (objValue, srcValue, key, object, source, stack)=> {
             if (key === "jobInstance") {
                 return jobInstance;
             }
@@ -155,7 +155,7 @@ export class IdbJobRepository extends JobRepository {
     reviveStepExecution(dto, jobExecution) {
         var stepExecution = new StepExecution(dto.stepName, jobExecution, dto.id);
         var executionContext = this.reviveExecutionContext(dto.executionContext);
-        return _.mergeWith(stepExecution, dto, (objValue, srcValue, key, object, source, stack)=> {
+        return Utils.mergeWith(stepExecution, dto, (objValue, srcValue, key, object, source, stack)=> {
             if (key === "jobExecution") {
                 return jobExecution;
             }

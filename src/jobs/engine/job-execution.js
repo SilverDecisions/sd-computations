@@ -2,7 +2,7 @@ import {JOB_STATUS} from "./job-status";
 import {StepExecution} from "./step-execution";
 import {Utils} from "sd-utils";
 import {ExecutionContext} from "./execution-context";
-import * as _ from "lodash";
+
 /*domain object representing the execution of a job.*/
 export class JobExecution {
     id;
@@ -73,12 +73,12 @@ export class JobExecution {
     }
 
     getDTO(filteredProperties = [], deepClone = true) {
-        var cloneMethod = _.cloneDeepWith;
+        var cloneMethod = Utils.cloneDeepWith;
         if (!deepClone) {
-            cloneMethod = _.cloneWith;
+            cloneMethod = Utils.cloneWith;
         }
 
-        return _.assign({}, cloneMethod(this, (value, key, object, stack)=> {
+        return Utils.assign({}, cloneMethod(this, (value, key, object, stack)=> {
             if (filteredProperties.indexOf(key) > -1) {
                 return null;
             }

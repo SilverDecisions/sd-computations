@@ -1,6 +1,6 @@
 import {domain as model} from 'sd-model'
 import {ObjectiveRule} from './objective-rule'
-import * as _ from "lodash";
+import {Utils} from "sd-utils";
 
 /*maxi-max rule*/
 export class MaxiMaxRule extends ObjectiveRule{
@@ -79,7 +79,7 @@ export class MaxiMaxRule extends ObjectiveRule{
 
         var optimalEdge = null;
         if (node instanceof model.ChanceNode) {
-            optimalEdge = _.maxBy(node.childEdges, e=>this.cValue(e.childNode, 'payoff'));
+            optimalEdge = Utils.maxBy(node.childEdges, e=>this.cValue(e.childNode, 'payoff'));
         }
 
         node.childEdges.forEach(e=> {

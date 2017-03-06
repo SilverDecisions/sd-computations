@@ -1,6 +1,6 @@
 import {domain as model} from 'sd-model'
 import {ObjectiveRule} from './objective-rule'
-import * as _ from "lodash";
+import {Utils} from "sd-utils";
 
 /*mini-min rule*/
 export class MiniMinRule extends ObjectiveRule{
@@ -79,7 +79,7 @@ export class MiniMinRule extends ObjectiveRule{
 
         var optimalEdge = null;
         if (node instanceof model.ChanceNode) {
-            optimalEdge = _.minBy(node.childEdges, e=>this.cValue(e.childNode, 'payoff'));
+            optimalEdge = Utils.minBy(node.childEdges, e=>this.cValue(e.childNode, 'payoff'));
         }
 
         node.childEdges.forEach(e=> {

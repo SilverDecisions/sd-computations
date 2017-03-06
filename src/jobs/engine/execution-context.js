@@ -1,4 +1,4 @@
-import *  as _ from "lodash";
+import {Utils} from "sd-utils";
 
 export class ExecutionContext {
 
@@ -7,7 +7,7 @@ export class ExecutionContext {
 
     constructor(context) {
         if (context) {
-            this.context = _.clone(context)
+            this.context = Utils.clone(context)
         }
     }
 
@@ -44,7 +44,7 @@ export class ExecutionContext {
     }
 
     getDTO() {
-        var dto = _.cloneDeep(this);
+        var dto = Utils.cloneDeep(this);
         var data = this.getData();
         if (data) {
             data = data.getDTO();

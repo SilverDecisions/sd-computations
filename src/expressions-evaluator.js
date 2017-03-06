@@ -1,7 +1,6 @@
 import {ExpressionEngine} from "sd-expression-engine";
 import {domain as model} from 'sd-model'
-import * as _ from "lodash";
-import {log} from 'sd-utils'
+import {Utils, log} from 'sd-utils'
 
 /*Evaluates code and expressions in trees*/
 export class ExpressionsEvaluator {
@@ -122,6 +121,6 @@ export class ExpressionsEvaluator {
     initScopeForNode(data, node){
         var parent = node.$parent;
         var parentScope = parent?parent.expressionScope : data.expressionScope;
-        node.expressionScope = _.cloneDeep(parentScope);
+        node.expressionScope = Utils.cloneDeep(parentScope);
     }
 }

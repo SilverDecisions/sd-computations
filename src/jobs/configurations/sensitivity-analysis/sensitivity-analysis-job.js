@@ -3,7 +3,7 @@ import {Step} from "../../engine/step";
 import {JOB_STATUS} from "../../engine/job-status";
 import {TreeValidator} from "../../../validation/tree-validator";
 import {SensitivityAnalysisJobParameters} from "./sensitivity-analysis-job-parameters";
-import * as _ from "lodash";
+import {Utils} from "sd-utils";
 import {BatchStep} from "../../engine/batch/batch-step";
 
 export class SensitivityAnalysisJob extends SimpleJob {
@@ -81,9 +81,9 @@ class PrepareVariablesStep extends Step {
     }
 
     cartesianProductOf(arrays) {
-        return _.reduce(arrays, function (a, b) {
-            return _.flatten(_.map(a, function (x) {
-                return _.map(b, function (y) {
+        return Utils.reduce(arrays, function (a, b) {
+            return Utils.flatten(Utils.map(a, function (x) {
+                return Utils.map(b, function (y) {
                     return x.concat([y]);
                 });
             }), true);
