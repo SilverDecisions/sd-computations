@@ -11,11 +11,14 @@ import {JobParametersInvalidException} from "./jobs/engine/exceptions/job-parame
 
 export class ComputationsManagerConfig {
 
+    logLevel = null;
+
     ruleName = null;
     worker = {
         delegateRecomputation:false,
         url: null
     };
+
 
 
     constructor(custom) {
@@ -36,7 +39,7 @@ export class ComputationsManager {
 
     treeValidator;
 
-    constructor(data, config) {
+    constructor(config, data=null) {
         this.data = data;
         this.setConfig(config);
         this.expressionEngine = new ExpressionEngine();

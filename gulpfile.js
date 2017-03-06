@@ -5,6 +5,7 @@ var plugins = require('gulp-load-plugins')();
 var argv = require('yargs').argv;
 
 var browserify = require("browserify");
+var resolutions = require('browserify-resolutions');
 var source = require('vinyl-source-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var buffer = require('vinyl-buffer');
@@ -20,7 +21,7 @@ var chalk = require('chalk')
 
 var projectName= "sd-computations";
 var standaloneName= "SilverDecisions.Computations";
-
+gulp
 gulp.task('clean', function (cb) {
     return del(['tmp', 'dist'], cb);
 });
@@ -39,7 +40,9 @@ function buildJs(src, standaloneName,  jsFileName, dest) {
         cache: {},
         packageCache: {},
         standalone: standaloneName
-    }).transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["babel-plugin-transform-builtin-extend", {globals: ["Error"]}]]})
+    })
+        .plugin(resolutions, '*')
+        .transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["babel-plugin-transform-builtin-extend", {globals: ["Error"]}]]})
         .bundle()
         .on('error', map_error)
         .pipe(plugins.plumber({ errorHandler: onError }))
