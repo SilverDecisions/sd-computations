@@ -68,6 +68,10 @@ export class JobExecution {
         return this.executionContext.getData();
     }
 
+    setResult(result) {
+        return this.executionContext.put("result", result);
+    }
+
     getResult() {
         return this.executionContext.get("result");
     }

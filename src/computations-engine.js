@@ -44,6 +44,15 @@ export class ComputationsEngine extends ComputationsManager{
                 },
                 executeJob: function(jobExecutionId){
                     instance.jobsManger.execute(jobExecutionId)
+                },
+                recompute: function(dataDTO, ruleName, evalCode, evalNumeric){
+                    if(ruleName){
+                        instance.objectiveRulesManager.setCurrentRuleByName(ruleName);
+                    }
+                    var allRules = !ruleName;
+                    var data = new DataModel(dataDTO);
+                    instance._checkValidityAndRecomputeObjective(data, allRules, evalCode, evalNumeric)
+                    this.reply('recomputed', data.getDTO());
                 }
             };
 

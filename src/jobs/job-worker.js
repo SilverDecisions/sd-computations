@@ -44,6 +44,10 @@ export class JobWorker{
         this.sendQuery('executeJob', jobExecutionId)
     }
 
+    recompute(dataDTO, ruleNames, evalCode, evalNumeric){
+        this.sendQuery('recompute', dataDTO, ruleNames, evalCode, evalNumeric)
+    }
+
     postMessage(message) {
         this.worker.postMessage(message);
     }

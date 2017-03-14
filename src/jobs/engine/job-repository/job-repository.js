@@ -1,4 +1,3 @@
-import *  as _ from 'lodash'
 import {JobKeyGenerator} from "../job-key-generator";
 import {JobInstance} from "../job-instance";
 import {Utils} from "sd-utils";
@@ -170,7 +169,9 @@ export class JobRepository {
     }
 
 
+    remove(){ //TODO
 
+    }
 
 
     reviveJobInstance(dto) {

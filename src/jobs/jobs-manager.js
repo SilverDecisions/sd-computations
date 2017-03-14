@@ -22,6 +22,7 @@ export class JobsManager extends JobExecutionListener {
     jobExecutionListeners = [];
 
     afterJobExecutionPromiseResolves = {};
+    jobInstancesToTerminate = {};
 
     constructor(expressionsEvaluator, objectiveRulesManager, workerUrl) {
         super();
@@ -53,13 +54,13 @@ export class JobsManager extends JobExecutionListener {
     }
 
     run(jobName, jobParametersValues, data, resolvePromiseAfterJobIsLaunched = true) {
-        return this.jobLauncher.run(jobName, jobParametersValues, data, resolvePromiseAfterJobIsLaunched).then(jobExecution=>{
-            if(resolvePromiseAfterJobIsLaunched || !jobExecution.isRunning()){
+        return this.jobLauncher.run(jobName, jobParametersValues, data, resolvePromiseAfterJobIsLaunched).then(jobExecution=> {
+            if (resolvePromiseAfterJobIsLaunched || !jobExecution.isRunning()) {
                 return jobExecution;
             }
             //job was delegated to worker and is still running
 
-            return new Promise((resolve, reject)=>{
+            return new Promise((resolve, reject)=> {
                 this.afterJobExecutionPromiseResolves[jobExecution.id] = resolve;
             });
         });
@@ -87,6 +88,23 @@ export class JobsManager extends JobExecutionListener {
 
             return this.jobRepository.saveJobExecutionFlag(jobExecution.id, JOB_EXECUTION_FLAG.STOP).then(()=>jobExecution);
         });
+    }
+
+    /*stop job execution if running and delete job instance from repository*/
+    terminate(jobInstance) {
+
+        return this.jobRepository.getLastJobExecutionByInstance(jobInstance).then(jobExecution=> {
+            console.log('terminate',jobExecution);
+            if (jobExecution && jobExecution.isRunning()) {
+                return this.jobRepository.saveJobExecutionFlag(jobExecution.id, JOB_EXECUTION_FLAG.STOP).then(()=>jobExecution);
+            }
+        }).then(()=>{
+            this.jobInstancesToTerminate[jobInstance.id]=jobInstance;
+        })
+    }
+
+    getJobByName(jobName) {
+        return this.jobRepository.getJobByName(jobName);
     }
 
 
@@ -131,6 +149,13 @@ export class JobsManager extends JobExecutionListener {
         this.jobExecutionListeners.push(listener);
     }
 
+    deregisterJobExecutionListener(listener) {
+        var index = this.jobExecutionListeners.indexOf(listener);
+        if (index > -1) {
+            this.jobExecutionListeners.splice(index, 1)
+        }
+    }
+
     beforeJob(jobExecution) {
         log.debug("beforeJob", this.useWorker, jobExecution);
         this.jobExecutionListeners.forEach(l=>l.beforeJob(jobExecution));
@@ -140,8 +165,12 @@ export class JobsManager extends JobExecutionListener {
         log.debug("afterJob", this.useWorker, jobExecution);
         this.jobExecutionListeners.forEach(l=>l.afterJob(jobExecution));
         var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecution.id];
-        if(promiseResolve){
+        if (promiseResolve) {
             promiseResolve(jobExecution)
+        }
+
+        if(this.jobInstancesToTerminate[jobExecution.jobInstance.id]){
+            this.jobRepository.remove(jobExecution.jobInstance);
         }
     }
 }

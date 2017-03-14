@@ -87,7 +87,7 @@ export class JobLauncher {
             return jobExecutionOrId;
         }).then(jobExecution=>{
             if(!jobExecution){
-                throw new JobRestartException("JobExecution [" + jobExecution.id + "] is not found");
+                throw new JobRestartException("JobExecution [" + jobExecutionOrId + "] is not found");
             }
 
             if (jobExecution.status !== JOB_STATUS.STARTING) {

@@ -7,6 +7,7 @@ import {JobsManager} from "./jobs/jobs-manager";
 import {ExpressionsEvaluator} from "./expressions-evaluator";
 import {JobDataInvalidException} from "./jobs/engine/exceptions/job-data-invalid-exception";
 import {JobParametersInvalidException} from "./jobs/engine/exceptions/job-parameters-invalid-exception";
+import {JobInstanceManager} from "./jobs/job-instance-manager";
 
 
 export class ComputationsManagerConfig {
@@ -18,8 +19,6 @@ export class ComputationsManagerConfig {
         delegateRecomputation:false,
         url: null
     };
-
-
 
     constructor(custom) {
         if (custom) {
@@ -59,80 +58,19 @@ export class ComputationsManager {
         return this.objectiveRulesManager.currentRule;
     }
 
-    testJob(testStop = false, stopAt = 10, resume = true) {
-        var stopped = false;
-        var checkProgress = (r)=> {
-            var starttime = new Date().getTime();
-            this.jobsManger.getProgress(r).then(progress=> {
-                progress = progress || 0;
-                log.debug('progress', progress, (new Date().getTime() - starttime) / 1000);
-                if (progress < 100) {
-
-                    if (testStop && !stopped && progress >= stopAt) {
-                        log.debug('stopping', r);
-                        this.jobsManger.stop(r).then(()=> {
-                            stopped = true;
-                            log.debug('stpping result', r)
-                            if (resume) {
-                                var _this = this;
-                                setTimeout(function () {
-                                    log.debug('resume', r.jobParameters.values)
-                                    _this.runJob("sensitivity-analysis", r.jobParameters.values).then(_r=> {
-                                        log.debug(_r);
-                                        checkProgress(_r);
-
-                                    }).catch(e=> {
-                                        if (e instanceof JobDataInvalidException) {
-                                            log.warn("Jod data is invalid: " + e);
-                                        } else if (e instanceof JobParametersInvalidException) {
-                                            log.warn("Jod parameters are invalid: " + e);
-                                        } else {
-                                            log.error(e);
-                                        }
-
-                                    })
-                                }, 2000);
-                            }
-                        })
-                        return;
-                    }
-
-                    setTimeout(function () {
-                        checkProgress(r)
-                    }, 100);
-                }
-
-            })
-
-        };
-        var jobParamsValues = {
-            ruleName: this.getCurrentRule().name,
-            variables: [
-                {name: 'p', min: 0, max: 1, length: 11},
-                {name: 'a', min: 1, max: 10, length: 10},
-                {name: 'b', min: 0, max: 100, length: 10}
-            ]
-        };
-        this.runJob("sensitivity-analysis", jobParamsValues).then(r=> {
-            log.debug(r);
-
-
-            checkProgress(r);
-
-        }).catch(e=> {
-            if (e instanceof JobDataInvalidException) {
-                log.warn("Jod data is invalid: " + e);
-            } else if (e instanceof JobParametersInvalidException) {
-                log.warn("Jod parameters are invalid: " + e);
-            } else {
-                log.error(e);
-            }
-
-        })
+    getJobByName(jobName){
+        return this.jobsManger.getJobByName(jobName);
     }
 
     runJob(name, jobParamsValues, data, resolvePromiseAfterJobIsLaunched = true) {
-        return this.jobsManger.run(name, jobParamsValues, data || this.data, resolvePromiseAfterJobIsLaunched);
+        return this.jobsManger.run(name, jobParamsValues, data || this.data, resolvePromiseAfterJobIsLaunched)
+    }
+
+    runJobWithInstanceManager(name, jobParamsValues, jobInstanceManagerConfig) {
+        return this.runJob(name, jobParamsValues).then(je=>{
+            return new JobInstanceManager(this.jobsManger, je, jobInstanceManagerConfig);
+        })
+
     }
 
     getObjectiveRules() {
