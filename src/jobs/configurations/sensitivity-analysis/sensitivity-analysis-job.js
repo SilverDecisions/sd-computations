@@ -289,6 +289,7 @@ class CalculateStep extends BatchStep {
         this.objectiveRulesManager.recomputeTree(treeRoot, false);
         var policies = new PoliciesCollector(treeRoot, ruleName).policies;
         var r = {
+            data: data.getDTO(),
             policies: policies,
             variables: item,
             payoff: treeRoot.computedValue(ruleName, 'payoff')
@@ -308,10 +309,14 @@ class CalculateStep extends BatchStep {
                 return;
             }
             i.policies.forEach(policy=>{
-                var row = [policy.key];
-                i.variables.forEach(v=>row.push(v));
-                row.push(ExpressionEngine.toFloat(i.payoff));
-                result.rows.push(row);
+                var rowCells = [policy.key];
+                i.variables.forEach(v=>rowCells.push(v));
+                rowCells.push(ExpressionEngine.toFloat(i.payoff));
+                result.rows.push({
+                    cells: rowCells,
+                    data: i.data,
+                    policy: policy
+                });
             })
         })
     }
