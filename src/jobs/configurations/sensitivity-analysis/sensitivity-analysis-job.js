@@ -95,7 +95,7 @@ class PrepareVariablesStep extends Step {
     };
 }
 
-class Decision{
+export class Decision{
     node;
     decisionValue; //index of  selected edge
     key;
@@ -111,7 +111,7 @@ class Decision{
     }
 }
 
-class Policy{
+export class Policy{
     id;
     decisions = [];
 
@@ -153,7 +153,7 @@ class Policy{
 
 }
 
-class PoliciesCollector{
+export class PoliciesCollector{
     ruleName;
     policies = [];
 
@@ -250,13 +250,16 @@ class CalculateStep extends BatchStep {
         var variableNames = params.value("variables").map(v=>v.name);
         stepExecution.executionContext.put("variableNames", variableNames)
 
-        var headers = ['policy'];
-        variableNames.forEach(n=>headers.push(n));
-        headers.push('payoff');
-        stepExecution.jobExecution.setResult({
-            headers:headers,
-            rows: []
-        });
+        if(!stepExecution.jobExecution.getResult()){
+            var headers = ['policy'];
+            variableNames.forEach(n=>headers.push(n));
+            headers.push('payoff');
+            stepExecution.jobExecution.setResult({
+                headers:headers,
+                rows: []
+            });
+        }
+
         return variableValues.length;
     }
 

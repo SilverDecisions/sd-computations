@@ -7,6 +7,7 @@ import {JobParameters} from "./engine/job-parameters";
 import {IdbJobRepository} from "./engine/job-repository/idb-job-repository";
 import {JOB_EXECUTION_FLAG} from "./engine/job-execution-flag";
 import {RecomputeJob} from "./configurations/recompute/recompute-job";
+import {ProbabilisticSensitivityAnalysisJob} from "./configurations/probabilistic-sensitivity-analysis/probabilistic-sensitivity-analysis-job";
 
 export class JobsManager extends JobExecutionListener {
 
@@ -137,6 +138,7 @@ export class JobsManager extends JobExecutionListener {
 
     registerJobs() {
         this.registerJob(new SensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.registerJob(new ProbabilisticSensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
         this.registerJob(new RecomputeJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
     }
 
