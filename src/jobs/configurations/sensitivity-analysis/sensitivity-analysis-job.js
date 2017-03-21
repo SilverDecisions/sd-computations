@@ -5,8 +5,8 @@ import {TreeValidator} from "../../../validation/tree-validator";
 import {SensitivityAnalysisJobParameters} from "./sensitivity-analysis-job-parameters";
 import {Utils} from "sd-utils";
 import {BatchStep} from "../../engine/batch/batch-step";
-import {domain as model} from 'sd-model'
 import {ExpressionEngine} from "sd-expression-engine";
+import {PoliciesCollector} from "../../../policies/policies-collector";
 
 export class SensitivityAnalysisJob extends SimpleJob {
 
@@ -62,7 +62,7 @@ class PrepareVariablesStep extends Step {
         variables.forEach(v=> {
             variableValues.push(this.sequence(v.min, v.max, v.length));
         });
-        variableValues = this.cartesianProductOf(variableValues);
+        variableValues = Utils.cartesianProductOf(variableValues);
         stepExecution.executionContext.put("variableValues", variableValues);
         stepExecution.getJobExecutionContext().put("variableValues", variableValues);
 
@@ -84,132 +84,9 @@ class PrepareVariablesStep extends Step {
         return result;
     }
 
-    cartesianProductOf(arrays) {
-        return Utils.reduce(arrays, function (a, b) {
-            return Utils.flatten(Utils.map(a, function (x) {
-                return Utils.map(b, function (y) {
-                    return x.concat([y]);
-                });
-            }), true);
-        }, [[]]);
-    };
-}
-
-export class Decision{
-    node;
-    decisionValue; //index of  selected edge
-    key;
-
-    constructor(node, decisionValue) {
-        this.node = node;
-        this.decisionValue = decisionValue;
-        this.key = Decision.generateKey(this);
-    }
-
-    static generateKey(decision){
-        return decision.node.name+":"+(decision.decisionValue+1);
-    }
-}
-
-export class Policy{
-    id;
-    decisions = [];
-
-    constructor(id){
-        this.id = id;
-    }
-
-    addDecision(node, decisionValue){
-        var decision = new Decision(node, decisionValue);
-        this.decisions .push(decision);
-        this.key = Policy.generateKey(this);
-    }
-
-    static generateKey(policy){
-        var key = "";
-        policy.decisions.forEach(d=>key+=(key? "&": "")+d.key);
-        return key;
-    }
-
-    equals(policy, ignoreId=true){
-        if(this.key != policy.key){
-            return false;
-        }
-
-        return ignoreId || this.id === policy.id;
-    }
-
-
-    static generateKey(policy){
-        var key = "";
-        policy.decisions.forEach(d=>key+=(key? "&": "")+d.key);
-        return key;
-    }
-
-    static getOptimalPolicies(root){
-
-    }
-
 
 }
 
-export class PoliciesCollector{
-    ruleName;
-    policies = [];
-
-    constructor(root, ruleName){
-        this.ruleName = ruleName;
-        var policy = this.createPolicy();
-        this.collect(root, policy);
-    }
-
-    collect(root, policy){
-        var nodeQueue = [root];
-        var node;
-        while(nodeQueue.length){
-            node = nodeQueue.shift();
-
-            if(!node.computedValue(this.ruleName, 'optimal')){
-                continue;
-            }
-
-            if(node instanceof model.DecisionNode){
-
-                var childPolicies = [];
-                var optimalDecInd = 0;
-                var optimalDecisions = node.childEdges.filter(edge=>edge.childNode.computedValue(this.ruleName, 'optimal'));
-                optimalDecisions.forEach((edge, i)=>{
-                    childPolicies.push( i ? this.createPolicy(policy) : policy)
-                    optimalDecInd++;
-                });
-                optimalDecisions.forEach((edge, i)=>{
-
-                    var p = childPolicies[i];
-                    p.addDecision(node, i);
-                    this.collect(edge.childNode, p);
-                });
-                continue;
-            }
-
-            node.childEdges.forEach((edge, i)=>{
-                nodeQueue.push(edge.childNode)
-            })
-        }
-    }
-
-
-    createPolicy(policyToBranch){
-        var policy = new Policy(this.nextPolicyId);
-
-        if(policyToBranch){
-            policy.decisions = policyToBranch.decisions.slice()
-        }
-
-        this.policies.push(policy);
-        return policy;
-    }
-
-}
 
 class InitPoliciesStep extends Step {
     constructor(jobRepository) {
@@ -236,7 +113,6 @@ class CalculateStep extends BatchStep {
 
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
         super("calculate_step", jobRepository, 5);
-
         this.expressionsEvaluator = expressionsEvaluator;
         this.objectiveRulesManager = objectiveRulesManager;
         this.treeValidator = new TreeValidator();
