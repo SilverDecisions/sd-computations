@@ -8,6 +8,10 @@ import {IdbJobRepository} from "./engine/job-repository/idb-job-repository";
 import {JOB_EXECUTION_FLAG} from "./engine/job-execution-flag";
 import {RecomputeJob} from "./configurations/recompute/recompute-job";
 import {ProbabilisticSensitivityAnalysisJob} from "./configurations/probabilistic-sensitivity-analysis/probabilistic-sensitivity-analysis-job";
+import {TimeoutJobRepository} from "./engine/job-repository/timeout-job-repository";
+import {TornadoDiagramJob} from "./configurations/tornado-diagram/tornado-diagram-job";
+import {JOB_STATUS} from "./engine/job-status";
+
 
 export class JobsManager extends JobExecutionListener {
 
@@ -32,6 +36,7 @@ export class JobsManager extends JobExecutionListener {
         this.objectiveRulesManager = objectiveRulesManager;
 
         this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver());
+        // this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
         this.registerJobs();
 
         this.useWorker = !!workerUrl;
@@ -52,6 +57,10 @@ export class JobsManager extends JobExecutionListener {
             id = jobExecutionOrId.id
         }
         return this.jobRepository.getJobExecutionProgress(id);
+    }
+
+    getResult(jobInstance) {
+        return this.jobRepository.getJobResultByInstance(jobInstance);
     }
 
     run(jobName, jobParametersValues, data, resolvePromiseAfterJobIsLaunched = true) {
@@ -95,7 +104,6 @@ export class JobsManager extends JobExecutionListener {
     terminate(jobInstance) {
 
         return this.jobRepository.getLastJobExecutionByInstance(jobInstance).then(jobExecution=> {
-            console.log('terminate',jobExecution);
             if (jobExecution && jobExecution.isRunning()) {
                 return this.jobRepository.saveJobExecutionFlag(jobExecution.id, JOB_EXECUTION_FLAG.STOP).then(()=>jobExecution);
             }
@@ -127,17 +135,21 @@ export class JobsManager extends JobExecutionListener {
     }
 
     initWorker(workerUrl) {
-        this.jobWorker = new JobWorker(workerUrl);
+        this.jobWorker = new JobWorker(workerUrl, ()=>{
+            log.error('error in worker', arguments);
+        });
         var argsDeserializer = (args)=> {
             return [this.jobRepository.reviveJobExecution(args[0])]
         };
 
         this.jobWorker.addListener("beforeJob", this.beforeJob, this, argsDeserializer);
         this.jobWorker.addListener("afterJob", this.afterJob, this, argsDeserializer);
+        this.jobWorker.addListener("jobFatalError", this.onJobFatalError, this);
     }
 
     registerJobs() {
         this.registerJob(new SensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.registerJob(new TornadoDiagramJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
         this.registerJob(new ProbabilisticSensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
         this.registerJob(new RecomputeJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
     }
@@ -174,5 +186,25 @@ export class JobsManager extends JobExecutionListener {
         if(this.jobInstancesToTerminate[jobExecution.jobInstance.id]){
             this.jobRepository.remove(jobExecution.jobInstance);
         }
+    }
+
+    onJobFatalError(jobExecutionId, error){
+        var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecutionId];
+        if (promiseResolve) {
+            this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
+                jobExecution.status = JOB_STATUS.FAILED;
+                if(error){
+                    jobExecution.failureExceptions.push(error);
+                }
+
+                return this.jobRepository.saveJobExecution(jobExecution).then(()=>{
+                    promiseResolve(jobExecution);
+                })
+            }).catch(e=>{
+                log.error(e);
+            })
+
+        }
+        log.debug('onJobFatalError', jobExecutionId, error);
     }
 }

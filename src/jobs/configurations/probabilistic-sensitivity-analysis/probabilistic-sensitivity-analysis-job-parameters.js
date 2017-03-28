@@ -6,6 +6,7 @@ export class ProbabilisticSensitivityAnalysisJobParameters extends JobParameters
     initDefinitions() {
         this.definitions.push(new JobParameterDefinition("id", PARAMETER_TYPE.STRING, 1, 1, true));
         this.definitions.push(new JobParameterDefinition("ruleName", PARAMETER_TYPE.STRING));
+        this.definitions.push(new JobParameterDefinition("preserveDataModel", PARAMETER_TYPE.BOOLEAN));
         this.definitions.push(new JobParameterDefinition("numberOfRuns", PARAMETER_TYPE.INTEGER).set("singleValueValidator", v => v > 0));
         this.definitions.push(new JobParameterDefinition("variables", [
                 new JobParameterDefinition("name", PARAMETER_TYPE.STRING),
@@ -18,7 +19,8 @@ export class ProbabilisticSensitivityAnalysisJobParameters extends JobParameters
 
     initDefaultValues() {
         this.values = {
-            id: Utils.guid()
+            id: Utils.guid(),
+            preserveDataModel: true
         }
     }
 }

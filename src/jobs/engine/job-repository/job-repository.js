@@ -67,6 +67,18 @@ export class JobRepository {
         throw "JobRepository.findJobExecutions function not implemented!"
     }
 
+    getJobResult(jobResultId){
+        throw "JobRepository.getJobResult function not implemented!"
+    }
+
+    getJobResultByInstance(jobInstance){
+        throw "JobRepository.getJobResultByInstance function not implemented!"
+    }
+
+    saveJobResult(jobResult) {
+        throw "JobRepository.setJobResult function not implemented!"
+    }
+
     /*Create a new JobInstance with the name and job parameters provided. return promise*/
     createJobInstance(jobName, jobParameters) {
         var jobInstance = new JobInstance(Utils.guid(), jobName);
@@ -169,9 +181,16 @@ export class JobRepository {
     }
 
 
-    remove(){ //TODO
-
+    remove(o){ //TODO
+        // if(o instanceof JobExecution){
+        //     return this.removeJobExecution(o);
+        // }
+        //
+        // if(o instanceof StepExecution){
+        //     return this.removeStepExecution(o);
+        // }
     }
+
 
 
     reviveJobInstance(dto) {

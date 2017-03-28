@@ -9,23 +9,24 @@ export const PARAMETER_TYPE = {
     COMPOSITE: 'COMPOSITE' //composite parameter with nested subparameters
 };
 
-export class JobParameterDefinition{
+export class JobParameterDefinition {
     name;
     type;
-    nestedParameters=[];
+    nestedParameters = [];
     minOccurs;
     maxOccurs;
+    required = true;
 
     identifying;
     validator;
     singleValueValidator;
 
-    constructor(name, typeOrNestedParametersDefinitions, minOccurs = 1, maxOccurs=1,identifying=false,singleValueValidator=null, validator=null) {
+    constructor(name, typeOrNestedParametersDefinitions, minOccurs = 1, maxOccurs = 1, identifying = false, singleValueValidator = null, validator = null) {
         this.name = name;
-        if(Utils.isArray(typeOrNestedParametersDefinitions)){
+        if (Utils.isArray(typeOrNestedParametersDefinitions)) {
             this.type = PARAMETER_TYPE.COMPOSITE;
             this.nestedParameters = typeOrNestedParametersDefinitions;
-        }else{
+        } else {
             this.type = typeOrNestedParametersDefinitions;
         }
         this.validator = validator;
@@ -35,64 +36,69 @@ export class JobParameterDefinition{
         this.maxOccurs = maxOccurs;
     }
 
-    set(key, val){
+    set(key, val) {
         this[key] = val;
         return this;
     }
 
-    validate(value){
+    validate(value) {
         var isArray = Utils.isArray(value);
 
-        if(this.maxOccurs>1 && !isArray){
+        if (this.maxOccurs > 1 && !isArray) {
             return false;
         }
 
-        if(!isArray){
+        if (!isArray) {
             return this.validateSingleValue(value)
         }
 
-        if(value.length<this.minOccurs || value.length>this.maxOccurs) {
+        if (value.length < this.minOccurs || value.length > this.maxOccurs) {
             return false;
         }
 
-        if(!value.every(this.validateSingleValue, this)){
+        if (!value.every(this.validateSingleValue, this)) {
             return false;
         }
 
-        if(this.validator){
+        if (this.validator) {
             return this.validator(value);
         }
 
         return true;
     }
 
-    validateSingleValue(value){
-        if((value===null || value === undefined) && this.minOccurs>0){
+    validateSingleValue(value) {
+        if ((value === null || value === undefined) && this.minOccurs > 0) {
             return false
         }
-        if(PARAMETER_TYPE.STRING === this.type && !Utils.isString(value)){
-            return false;
-        }
-        if(PARAMETER_TYPE.DATE === this.type && !Utils.isDate(value)){
-            return false;
-        }
-        if(PARAMETER_TYPE.INTEGER === this.type && !Utils.isInt(value)){
-            return false;
-        }
-        if(PARAMETER_TYPE.NUMBER === this.type && !Utils.isNumber(value)){
+
+        if (this.required && (!value && value !== 0 && value !== false)) {
             return false;
         }
 
-        if(PARAMETER_TYPE.COMPOSITE === this.type){
-            if(!Utils.isObject(value)){
+        if (PARAMETER_TYPE.STRING === this.type && !Utils.isString(value)) {
+            return false;
+        }
+        if (PARAMETER_TYPE.DATE === this.type && !Utils.isDate(value)) {
+            return false;
+        }
+        if (PARAMETER_TYPE.INTEGER === this.type && !Utils.isInt(value)) {
+            return false;
+        }
+        if (PARAMETER_TYPE.NUMBER === this.type && !Utils.isNumber(value)) {
+            return false;
+        }
+
+        if (PARAMETER_TYPE.COMPOSITE === this.type) {
+            if (!Utils.isObject(value)) {
                 return false;
             }
-            if(!this.nestedParameters.every((nestedDef, i)=>nestedDef.validate(value[nestedDef.name]))){
+            if (!this.nestedParameters.every((nestedDef, i)=>nestedDef.validate(value[nestedDef.name]))) {
                 return false;
             }
         }
 
-        if(this.singleValueValidator){
+        if (this.singleValueValidator) {
             return this.singleValueValidator(value);
         }
 

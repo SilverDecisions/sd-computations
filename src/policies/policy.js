@@ -7,6 +7,7 @@ export class Policy{
     constructor(id, decisions){
         this.id = id;
         this.decisions = decisions || [];
+        this.key = Policy.generateKey(this);
     }
 
     addDecision(node, decisionValue){
@@ -30,15 +31,31 @@ export class Policy{
         return ignoreId || this.id === policy.id;
     }
 
+    getDecision(decisionNode){
+        return Policy.getDecision(this, decisionNode);
+    }
 
-    static toPolicyString(policy, indent=false){
+    static getDecision(policy, decisionNode){
+        for(var i=0; i<policy.decisions.length; i++){
+            var decision = Decision.getDecision(policy.decisions[i], decisionNode);
+            if(decision){
+                return decision;
+            }
+        }
+        return null;
+    }
+
+    static toPolicyString(policy, indent=false, prependId=false){
         var res = "";
         policy.decisions.forEach(d=>{
             if(res){
                 res += ", "
             }
-            res += d.toDecisionString(indent);
+            res += Decision.toDecisionString(d, indent);
         });
+        if(prependId && policy.id!==undefined){
+            return policy.id+" "+res;
+        }
         return res;
     }
 

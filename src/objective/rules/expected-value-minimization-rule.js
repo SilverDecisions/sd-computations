@@ -1,5 +1,6 @@
 import {domain as model} from 'sd-model'
 import {ObjectiveRule} from './objective-rule'
+import {Utils} from "sd-utils";
 
 /*expected value minimization rule*/
 export class ExpectedValueMinimizationRule extends ObjectiveRule{
@@ -10,52 +11,8 @@ export class ExpectedValueMinimizationRule extends ObjectiveRule{
         super(ExpectedValueMinimizationRule.NAME, expressionEngine);
     }
 
-    // payoff - parent edge payoff, aggregatedPayoff - aggregated payoff along path
-    computePayoff(node, payoff=0, aggregatedPayoff=0){
-        var childrenPayoff = 0;
-        if (node.childEdges.length) {
-            if(node instanceof model.DecisionNode) {
-                var worstchild = Infinity;
-                node.childEdges.forEach(e=>{
-                    var childPayoff = this.computePayoff(e.childNode, this.basePayoff(e), this.add(this.basePayoff(e), aggregatedPayoff));
-                    worstchild = Math.min(worstchild, childPayoff);
-                });
-                node.childEdges.forEach(e=>{
-                    this.clearComputedValues(e);
-                    this.cValue(e, 'probability', this.cValue(e.childNode, 'payoff') > worstchild ? 0.0 : 1.0);
-                });
-            }else{
-                node.childEdges.forEach(e=>{
-                    this.computePayoff(e.childNode, this.basePayoff(e), this.add(this.basePayoff(e), aggregatedPayoff));
-                    this.clearComputedValues(e);
-                    this.cValue(e, 'probability', this.baseProbability(e));
-                });
-            }
-
-            var sumweight = 0 ;
-            node.childEdges.forEach(e=>{
-                sumweight=this.add(sumweight, this.cValue(e, 'probability'));
-            });
-
-            // console.log(payoff,node.childEdges,'sumweight',sumweight);
-
-            node.childEdges.forEach(e=>{
-                childrenPayoff= this.add(childrenPayoff, this.multiply(this.cValue(e, 'probability'),this.cValue(e.childNode, 'payoff')).div(sumweight));
-            });
-
-        }
-
-        payoff=this.add(payoff, childrenPayoff);
-        this.clearComputedValues(node);
-
-        if(node instanceof model.TerminalNode){
-            this.cValue(node, 'aggregatedPayoff', aggregatedPayoff);
-            this.cValue(node, 'probabilityToEnter', 0); //initial value
-        }else{
-            this.cValue(node, 'childrenPayoff', childrenPayoff);
-        }
-
-        return this.cValue(node, 'payoff', payoff);
+    makeDecision(decisionNode, childrenPayoffs){
+        return Utils.indexesOf(childrenPayoffs, this.min(...childrenPayoffs));
     }
 
     //  payoff - parent edge payoff

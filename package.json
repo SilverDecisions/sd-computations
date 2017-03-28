@@ -1,6 +1,6 @@
 {
   "name": "sd-computations",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SilverDecisions computations module",
   "main": "index.js",
   "directories": {

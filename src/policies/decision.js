@@ -23,6 +23,22 @@ export class Decision{
         return decision;
     }
 
+    getDecision(decisionNode){
+        return Decision.getDecision(this, decisionNode)
+    }
+
+    static getDecision(decision, decisionNode){
+        if(decision.node===decisionNode || decision.node.$id === decisionNode.$id){
+            return decision;
+        }
+        for(var i=0; i<decision.children.length; i++){
+            var d = Decision.getDecision(decision.children[i], decisionNode);
+            if(d){
+                return d;
+            }
+        }
+    }
+
     static toDecisionString(decision, indent=false, keyProperty='name'){
 
         var res = Decision.generateKey(decision, keyProperty);
@@ -33,7 +49,7 @@ export class Decision{
             }
             childrenRes += Decision.toDecisionString(d,indent)
         });
-        if(decision.children.length>1){
+        if(decision.children.length){
             childrenRes = "(" + childrenRes + ")";
         }
         if(childrenRes.length){

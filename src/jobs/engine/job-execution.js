@@ -27,7 +27,6 @@ export class JobExecution {
             this.id = id;
         }
 
-        this.id = Utils.guid();
         this.jobInstance = jobInstance;
         this.jobParameters = jobParameters;
     }
@@ -66,14 +65,6 @@ export class JobExecution {
 
     getData() {
         return this.executionContext.getData();
-    }
-
-    setResult(result) {
-        return this.executionContext.put("result", result);
-    }
-
-    getResult() {
-        return this.executionContext.get("result");
     }
 
     getDTO(filteredProperties = [], deepClone = true) {

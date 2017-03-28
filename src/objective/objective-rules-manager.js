@@ -40,13 +40,13 @@ export class ObjectiveRulesManager{
         this.currentRule = this.ruleByName[ruleName];
     }
 
-    recompute(allRules){
+    recompute(allRules, decisionPolicy=null){
 
         var startTime = new Date().getTime();
         log.trace('recomputing rules, all: '+allRules);
 
         this.data.getRoots().forEach(n=>{
-            this.recomputeTree(n, allRules);
+            this.recomputeTree(n, allRules, decisionPolicy);
         });
 
         var time  = (new Date().getTime() - startTime/1000);
@@ -55,7 +55,7 @@ export class ObjectiveRulesManager{
         return this;
     }
 
-    recomputeTree(root, allRules){
+    recomputeTree(root, allRules, decisionPolicy=null){
         log.trace('recomputing rules for tree ...', root);
 
         var startTime = new Date().getTime();
@@ -66,8 +66,10 @@ export class ObjectiveRulesManager{
         }
 
         rules.forEach(rule=> {
+            rule.setDecisionPolicy(decisionPolicy);
             rule.computePayoff(root);
             rule.computeOptimal(root);
+            rule.clearDecisionPolicy();
         });
 
         var time  = (new Date().getTime() - startTime)/1000;

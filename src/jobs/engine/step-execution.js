@@ -31,6 +31,7 @@ export class StepExecution {
 
         this.stepName = stepName;
         this.jobExecution = jobExecution;
+        this.jobExecutionId = jobExecution.id;
     }
 
     getJobParameters(){
@@ -42,7 +43,7 @@ export class StepExecution {
     }
 
     getData(){
-        return this.executionContext.get("data");
+        return this.jobExecution.getData();
     }
 
     getDTO(filteredProperties=[], deepClone = true){

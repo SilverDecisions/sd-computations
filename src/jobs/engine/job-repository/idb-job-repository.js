@@ -14,6 +14,7 @@ export class IdbJobRepository extends JobRepository {
     jobInstanceDao;
     jobExecutionDao;
     stepExecutionDao;
+    jobResultDao;
     jobExecutionProgressDao;
     jobExecutionFlagDao;
 
@@ -36,6 +37,7 @@ export class IdbJobRepository extends JobRepository {
         this.jobExecutionFlagDao = new ObjectStoreDao('job-execution-flags', this.dbPromise);
 
         this.stepExecutionDao = new ObjectStoreDao('step-executions', this.dbPromise);
+        this.jobResultDao = new ObjectStoreDao('job-results', this.dbPromise);
     }
 
     initDB(){
@@ -48,12 +50,28 @@ export class IdbJobRepository extends JobRepository {
             upgradeDB.createObjectStore('job-execution-progress');
             upgradeDB.createObjectStore('job-execution-flags');
             var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
-            stepExecutionsOS.createIndex("jobExecutionId", "jobExecution.id", { unique: false });
+            stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", { unique: false });
+
+            var jobResultOS = upgradeDB.createObjectStore('job-results');
+            jobResultOS.createIndex("jobInstanceId", "jobInstance.id", { unique: true });
         });
     }
 
     deleteDB(){
         return Promise.resolve().then(_=>idb.delete(this.dbName));
+    }
+
+
+    getJobResult(jobResultId){
+        return this.jobResultDao.get(jobResultId);
+    }
+
+    getJobResultByInstance(jobInstance){
+        return this.jobResultDao.getByIndex("jobInstanceId", jobInstance.id);
+    }
+
+    saveJobResult(jobResult) {
+        return this.jobResultDao.set(jobResult.id, jobResult).then(r=>jobResult);
     }
 
     /*returns promise*/
@@ -71,7 +89,9 @@ export class IdbJobRepository extends JobRepository {
     /*should return promise that resolves to saved jobExecution*/
     saveJobExecution(jobExecution) {
         var dto = jobExecution.getDTO();
-        return this.jobExecutionDao.set(jobExecution.id, dto).then(r=>jobExecution);
+        var stepExecutionsDTOs = dto.stepExecutions;
+        dto.stepExecutions=null;
+        return this.jobExecutionDao.set(jobExecution.id, dto).then(r=>this.saveStepExecutionsDTOS(stepExecutionsDTOs)).then(r=>jobExecution);
     }
 
     updateJobExecutionProgress(jobExecutionId, progress){
@@ -92,21 +112,92 @@ export class IdbJobRepository extends JobRepository {
 
     /*should return promise which resolves to saved stepExecution*/
     saveStepExecution(stepExecution) {
-        var dto = stepExecution.getDTO();
-        return this.jobExecutionDao.set(stepExecution.id, dto).then(r=>stepExecution);
+        var dto = stepExecution.getDTO(["jobExecution"]);
+        return this.stepExecutionDao.set(stepExecution.id, dto).then(r=>stepExecution);
+    }
+
+    saveStepExecutionsDTOS(stepExecutions, savedExecutions=[]) {
+        if(stepExecutions.length<=savedExecutions.length){
+            return Promise.resolve(savedExecutions);
+        }
+        var stepExecutionDTO = stepExecutions[savedExecutions.length];
+        return this.stepExecutionDao.set(stepExecutionDTO.id, stepExecutionDTO).then(()=>{
+            savedExecutions.push(stepExecutionDTO);
+            return this.saveStepExecutionsDTOS(stepExecutions, savedExecutions);
+        });
     }
 
     getJobExecutionById(id){
-        return this.jobExecutionDao.get(id).then(dto=>dto ? this.reviveJobExecution(dto): dto);
+        return this.jobExecutionDao.get(id).then(dto=>{
+            return this.fetchJobExecutionRelations(dto);
+        });
     }
 
-    /*find job executions sorted by createTime, returns promise*/
-    findJobExecutions(jobInstance) {
-        return this.jobExecutionDao.getAllByIndex("jobInstanceId", jobInstance.id).then(values=> {
-            return values.sort(function (a, b) {
-                return a.createTime.getTime() - b.createTime.getTime()
-            }).map(this.reviveJobExecution, this);
+    fetchJobExecutionRelations(jobExecutionDTO, revive=true){
+        if(!jobExecutionDTO){
+            return Promise.resolve(null)
+        }
+        return this.findStepExecutions(jobExecutionDTO.id, false).then(steps=>{
+            jobExecutionDTO.stepExecutions = steps;
+            if(!revive){
+                return jobExecutionDTO;
+            }
+            return this.reviveJobExecution(jobExecutionDTO);
+        })
+    }
+
+    fetchJobExecutionsRelations(jobExecutionDtoList, revive=true, fetched=[]){
+        if(jobExecutionDtoList.length<=fetched.length){
+            return Promise.resolve(fetched);
+        }
+        return this.fetchJobExecutionRelations(jobExecutionDtoList[fetched.length], revive).then((jobExecution)=>{
+            fetched.push(jobExecution);
+
+            return this.fetchJobExecutionsRelations(jobExecutionDtoList, revive, fetched);
         });
+    }
+
+    findStepExecutions(jobExecutionId, revive=true){
+        return this.stepExecutionDao.getAllByIndex("jobExecutionId", jobExecutionId).then(dtos=>{
+            if(!revive){
+                return dtos;
+            }
+            return dtos.map(dto=>this.reviveStepExecution(dto));
+        })
+    }
+
+
+    /*find job executions sorted by createTime, returns promise*/
+    findJobExecutions(jobInstance, fetchRelationsAndRevive=true) {
+        return this.jobExecutionDao.getAllByIndex("jobInstanceId", jobInstance.id).then(values=> {
+            var sorted =  values.sort(function (a, b) {
+                return a.createTime.getTime() - b.createTime.getTime()
+            });
+
+            if(!fetchRelationsAndRevive) {
+                return sorted;
+            }
+
+            return this.fetchJobExecutionsRelations(sorted, true)
+        });
+    }
+
+    getLastJobExecutionByInstance(jobInstance){
+        return this.findJobExecutions(jobInstance, false).then(executions=>this.fetchJobExecutionRelations(executions[executions.length -1]));
+    }
+
+    getLastStepExecution(jobInstance, stepName) {
+        return this.findJobExecutions(jobInstance).then(jobExecutions=>{
+            var stepExecutions=[];
+            jobExecutions.forEach(jobExecution=>jobExecution.stepExecutions.filter(s=>s.stepName === stepName).forEach((s)=>stepExecutions.push(s)));
+            var latest = null;
+            stepExecutions.forEach(s=>{
+                if (latest == null || latest.startTime.getTime() < s.startTime.getTime()) {
+                    latest = s;
+                }
+            });
+            return latest;
+        })
     }
 
     reviveJobInstance(dto) {

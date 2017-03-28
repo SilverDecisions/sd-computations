@@ -4,6 +4,7 @@ import {JobInterruptedException} from "./exceptions/job-interrupted-exception";
 import {JobParametersInvalidException} from "./exceptions/job-parameters-invalid-exception";
 import {JobDataInvalidException} from "./exceptions/job-data-invalid-exception";
 import {JOB_EXECUTION_FLAG} from "./job-execution-flag";
+import {JobResult} from "./job-result";
 /*Base class for jobs*/
 //A Job is an entity that encapsulates an entire job process ( an abstraction representing the configuration of a job).
 
@@ -32,6 +33,7 @@ export class Job {
 
     execute(execution) {
         log.debug("Job execution starting: ", execution);
+        var jobResult;
         return this.checkExecutionFlags(execution).then(execution=>{
 
             if (execution.status === JOB_STATUS.STOPPING) {
@@ -52,10 +54,15 @@ export class Job {
 
 
             execution.startTime = new Date();
-            return Promise.all([this.updateStatus(execution, JOB_STATUS.STARTED), this.updateProgress(execution)]).then(res=>{
+            return Promise.all([this.updateStatus(execution, JOB_STATUS.STARTED), this.getResult(execution), this.updateProgress(execution)]).then(res=>{
                 execution=res[0];
+                jobResult = res[1];
+                if(!jobResult) {
+                    jobResult = new JobResult(execution.jobInstance)
+                }
                 this.executionListeners.forEach(listener=>listener.beforeJob(execution));
-                return this.doExecute(execution);
+
+                return this.doExecute(execution, jobResult);
             });
 
         }).then(execution=>{
@@ -74,15 +81,29 @@ export class Job {
             execution.failureExceptions.push(e);
             return execution;
         }).then(execution=>{
+            if(jobResult){
+                return this.jobRepository.saveJobResult(jobResult).then(()=>execution)
+            }
+            return execution
+        }).catch(e=>{
+            log.error("Encountered fatal error saving job results", e);
+            if(e){
+                execution.failureExceptions.push(e);
+            }
+            execution.status = JOB_STATUS.FAILED;
+            execution.exitStatus = JOB_STATUS.FAILED;
+            return execution;
+        }).then(execution=>{
             execution.endTime = new Date();
-
+            return Promise.all([this.jobRepository.update(execution), this.updateProgress(execution)]).then(res=>res[0])
+        }).then(execution=>{
             try {
                 this.executionListeners.forEach(listener=>listener.afterJob(execution));
             } catch (e) {
                 log.error("Exception encountered in afterStep callback", e);
             }
-            return Promise.all([this.jobRepository.update(execution), this.updateProgress(execution)]).then(res=>res[0]);
-        });
+            return execution;
+        })
     }
 
 
@@ -96,7 +117,7 @@ export class Job {
     }
 
     /* Extension point for subclasses allowing them to concentrate on processing logic and ignore listeners, returns promise*/
-    doExecute(execution) {
+    doExecute(execution, jobResult) {
         throw 'doExecute function not implemented for job: ' + this.name
     }
 
@@ -121,9 +142,14 @@ export class Job {
         throw 'createJobParameters function not implemented for job: ' + this.name
     }
 
-    /*Should return progress in percents (integer)*/
+    /*Should return progress object with fields:
+    * current
+    * total */
     getProgress(execution){
-        return execution.status === JOB_STATUS.COMPLETED ? 100 : 0;
+        return {
+            total: 1,
+            current: execution.status === JOB_STATUS.COMPLETED ? 1 : 0
+        }
     }
 
     registerExecutionListener(listener){
@@ -137,5 +163,9 @@ export class Job {
             }
             return execution
         })
+    }
+
+    getResult(execution) {
+        return this.jobRepository.getJobResultByInstance(execution.jobInstance);
     }
 }

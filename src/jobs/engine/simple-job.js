@@ -21,9 +21,9 @@ export class SimpleJob extends Job {
         return Utils.find(this.steps, s=>s.name == stepName);
     }
 
-    doExecute(execution) {
+    doExecute(execution, jobResult) {
 
-        return this.handleNextStep(execution).then(lastExecutedStepExecution=>{
+        return this.handleNextStep(execution, jobResult).then(lastExecutedStepExecution=>{
             if (lastExecutedStepExecution != null) {
                 log.debug("Updating JobExecution status: ", lastExecutedStepExecution);
                 execution.status = lastExecutedStepExecution.status;
@@ -33,7 +33,7 @@ export class SimpleJob extends Job {
         });
     }
 
-    handleNextStep(jobExecution, prevStep=null, prevStepExecution=null){
+    handleNextStep(jobExecution, jobResult, prevStep=null, prevStepExecution=null){
         var stepIndex = 0;
         if(prevStep){
             stepIndex = this.steps.indexOf(prevStep)+1;
@@ -42,15 +42,15 @@ export class SimpleJob extends Job {
             return Promise.resolve(prevStepExecution)
         }
         var step = this.steps[stepIndex];
-        return this.handleStep(step, jobExecution).then(stepExecution=>{
+        return this.handleStep(step, jobExecution, jobResult).then(stepExecution=>{
             if(stepExecution.status !== JOB_STATUS.COMPLETED){ // Terminate the job if a step fails
                 return stepExecution;
             }
-            return this.handleNextStep(jobExecution, step, stepExecution);
+            return this.handleNextStep(jobExecution, jobResult, step, stepExecution);
         })
     }
 
-    handleStep(step, jobExecution) {
+    handleStep(step, jobExecution, jobResult) {
         var jobInstance = jobExecution.jobInstance;
         return this.checkExecutionFlags(jobExecution).then(jobExecution=>{
             if (jobExecution.isStopping()) {
@@ -73,7 +73,9 @@ export class SimpleJob extends Job {
 
             currentStepExecution = jobExecution.createStepExecution(step.name);
 
-            var isRestart = lastStepExecution != null && lastStepExecution.status !== JOB_STATUS.COMPLETED;
+            var isCompleted = lastStepExecution != null && lastStepExecution.status === JOB_STATUS.COMPLETED;
+            var isRestart = lastStepExecution != null && !isCompleted;
+            var skipExecution = isCompleted && step.skipOnRestartIfCompleted;
 
             if (isRestart) {
                 currentStepExecution.executionContext = lastStepExecution.executionContext;
@@ -82,13 +84,23 @@ export class SimpleJob extends Job {
                 }
             }
             else {
-                currentStepExecution.executionContext = new ExecutionContext(jobExecution.executionContext.context);
+
+                currentStepExecution.executionContext = new ExecutionContext();
+            }
+            if(skipExecution){
+                currentStepExecution.exitStatus = JOB_STATUS.COMPLETED;
+                currentStepExecution.status = JOB_STATUS.COMPLETED;
+                currentStepExecution.executionContext.put("skipped", true);
             }
 
             return this.jobRepository.addStepExecution(currentStepExecution).then((_currentStepExecution)=>{
-                currentStepExecution=_currentStepExecution
+                currentStepExecution=_currentStepExecution;
+                if(skipExecution){
+                    log.info("Skipping completed step execution: [" + step.name + "]");
+                    return currentStepExecution;
+                }
                 log.info("Executing step: [" + step.name + "]");
-                return step.execute(currentStepExecution)
+                return step.execute(currentStepExecution, jobResult)
             }).then(()=>{
                 currentStepExecution.executionContext.put("executed", true);
                 return currentStepExecution;

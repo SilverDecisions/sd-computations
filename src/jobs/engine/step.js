@@ -8,6 +8,7 @@ export class Step {
     id;
     name;
     isRestartable = true;
+    skipOnRestartIfCompleted=true;
     steps = [];
     executionListeners = [];
 
@@ -23,7 +24,7 @@ export class Step {
     }
 
     /*Process the step and assign progress and status meta information to the StepExecution provided*/
-    execute(stepExecution) {
+    execute(stepExecution, jobResult) {
         log.debug("Executing step: name=" + this.name);
         stepExecution.startTime = new Date();
         stepExecution.status = JOB_STATUS.STARTED;
@@ -34,7 +35,7 @@ export class Step {
             this.executionListeners.forEach(listener=>listener.beforeStep(stepExecution));
             this.open(stepExecution.executionContext);
 
-            return this.doExecute(stepExecution)
+            return this.doExecute(stepExecution, jobResult)
         }).then(_stepExecution=>{
             stepExecution = _stepExecution;
             exitStatus = stepExecution.exitStatus;
@@ -111,7 +112,7 @@ export class Step {
      * Extension point for subclasses to execute business logic. Subclasses should set the exitStatus on the
      * StepExecution before returning. Must return stepExecution
      */
-    doExecute(stepExecution) {
+    doExecute(stepExecution, jobResult) {
     }
 
     /**
@@ -128,8 +129,14 @@ export class Step {
     close(executionContext) {
     }
 
-    /*Should return progress in percents (integer)*/
+
+    /*Should return progress object with fields:
+     * current
+     * total */
     getProgress(stepExecution){
-        return stepExecution.status === JOB_STATUS.COMPLETED ? 100 : 0;
+        return {
+            total: 1,
+            current: stepExecution.status === JOB_STATUS.COMPLETED ? 1 : 0
+        }
     }
 }

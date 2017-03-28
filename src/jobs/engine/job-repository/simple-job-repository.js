@@ -7,6 +7,7 @@ export class SimpleJobRepository extends JobRepository{
     stepExecutions = [];
     executionProgress = {};
     executionFlags = {};
+    jobResults = [];
 
     /*returns promise*/
     getJobInstance(jobName, jobParameters) {
@@ -19,6 +20,19 @@ export class SimpleJobRepository extends JobRepository{
         var key = this.generateJobInstanceKey(jobInstance.jobName, jobParameters);
         this.jobInstancesByKey[key] = jobInstance;
         return Promise.resolve(jobInstance)
+    }
+
+    getJobResult(jobResultId){
+        return Promise.resolve(Utils.find(this.jobResults, r=>r.id===jobResultId))
+    }
+
+    getJobResultByInstance(jobInstance){
+        return Promise.resolve(Utils.find(this.jobResults, r=>r.jobInstance.id===jobInstance.id))
+    }
+
+    saveJobResult(jobResult) {
+        this.jobResults.push(jobResult);
+        return Promise.resolve(jobResult);
     }
 
     getJobExecutionById(id){

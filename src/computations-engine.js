@@ -43,7 +43,9 @@ export class ComputationsEngine extends ComputationsManager{
                     instance.runJob(jobName, jobParametersValues, data);
                 },
                 executeJob: function(jobExecutionId){
-                    instance.jobsManger.execute(jobExecutionId)
+                    instance.jobsManger.execute(jobExecutionId).catch(e=>{
+                        instance.reply('jobFatalError', jobExecutionId, Utils.getErrorDTO(e));
+                    })
                 },
                 recompute: function(dataDTO, ruleName, evalCode, evalNumeric){
                     if(ruleName){

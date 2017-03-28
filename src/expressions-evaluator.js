@@ -9,6 +9,15 @@ export class ExpressionsEvaluator {
         this.expressionEngine = expressionEngine;
     }
 
+    clear(data){
+        data.nodes.forEach(n=>{
+            n.clearComputedValues();
+        });
+        data.edges.forEach(e=>{
+            e.clearComputedValues();
+        });
+    }
+
     clearTree(data, root){
         data.getAllNodesInSubtree(root).forEach(n=>{
             n.clearComputedValues();

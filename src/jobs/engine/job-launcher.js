@@ -80,7 +80,7 @@ export class JobLauncher {
     /**Execute previously created job execution*/
     execute(jobExecutionOrId){
 
-        Promise.resolve().then(()=>{
+        return Promise.resolve().then(()=>{
             if(Utils.isString(jobExecutionOrId)){
                 return this.jobRepository.getJobExecutionById(jobExecutionOrId);
             }

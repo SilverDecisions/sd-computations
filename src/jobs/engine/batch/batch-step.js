@@ -18,7 +18,7 @@ export class BatchStep extends Step {
     /**
      * Extension point for subclasses to perform step initialization. Should return total item count
      */
-    init(stepExecution) {
+    init(stepExecution, jobResult) {
         throw "BatchStep.init function not implemented for step: " + this.name;
     }
 
@@ -40,13 +40,13 @@ export class BatchStep extends Step {
     /**
      * Extension point for subclasses to write chunk of items. Not required
      */
-    writeChunk(stepExecution, items) {
+    writeChunk(stepExecution, items, jobResult) {
     }
 
     /**
      * Extension point for subclasses to perform postprocessing after all items have been processed. Not required
      */
-    postProcess(stepExecution) {
+    postProcess(stepExecution, jobResult) {
     }
 
 
@@ -67,9 +67,9 @@ export class BatchStep extends Step {
     }
 
 
-    doExecute(stepExecution) {
+    doExecute(stepExecution, jobResult) {
         return Promise.resolve().then(()=> {
-            return this.init(stepExecution)
+            return this.init(stepExecution, jobResult)
         }).catch(e=> {
             log.error("Failed to initialize batch step: " + this.name, e);
             throw e;
@@ -77,7 +77,7 @@ export class BatchStep extends Step {
             return Promise.resolve().then(()=>{
                 this.setCurrentItemCount(stepExecution, this.getCurrentItemCount(stepExecution));
                 this.setTotalItemCount(stepExecution, totalItemCount);
-                return this.handleNextChunk(stepExecution)
+                return this.handleNextChunk(stepExecution, jobResult)
             }).catch(e=> {
                 if(!(e instanceof JobInterruptedException)){
                     log.error("Failed to handle batch step: " + this.name, e);
@@ -86,7 +86,7 @@ export class BatchStep extends Step {
             })
         }).then(()=> {
             return Promise.resolve().then(()=>{
-                return this.postProcess(stepExecution)
+                return this.postProcess(stepExecution, jobResult)
             }).catch(e=> {
                 log.error("Failed to postProcess batch step: " + this.name, e);
                 throw e;
@@ -98,7 +98,7 @@ export class BatchStep extends Step {
 
     }
 
-    handleNextChunk(stepExecution) {
+    handleNextChunk(stepExecution, jobResult) {
         var currentItemCount = this.getCurrentItemCount(stepExecution);
         var totalItemCount = this.getTotalItemCount(stepExecution);
         var chunkSize = Math.min(this.chunkSize, totalItemCount - currentItemCount);
@@ -120,14 +120,14 @@ export class BatchStep extends Step {
             });
         }).then(chunk=> {
             return Promise.resolve().then(()=>{
-                return this.processChunk(stepExecution, chunk)
+                return this.processChunk(stepExecution, chunk, currentItemCount)
             }).catch(e=> {
                 log.error("Failed to process chunk (" + currentItemCount + "," + chunkSize + ") in batch step: " + this.name, e);
                 throw e;
             })
         }).then(processedChunk=> {
             return Promise.resolve().then(()=>{
-                return this.writeChunk(stepExecution, processedChunk)
+                return this.writeChunk(stepExecution, processedChunk, jobResult)
             }).catch(e=> {
                 log.error("Failed to write chunk (" + currentItemCount + "," + chunkSize + ") in batch step: " + this.name, e);
                 throw e;
@@ -136,18 +136,23 @@ export class BatchStep extends Step {
             currentItemCount += chunkSize;
             this.setCurrentItemCount(stepExecution, currentItemCount);
             return this.updateJobProgress(stepExecution).then(()=> {
-                return this.handleNextChunk(stepExecution);
+                return this.handleNextChunk(stepExecution, jobResult);
             });
         })
     }
 
-    processChunk(stepExecution, chunk) { //TODO promisify
-        return chunk.map(item=>this.processItem(stepExecution, item));
+    processChunk(stepExecution, chunk, currentItemCount) { //TODO promisify
+        return chunk.map((item, i)=>this.processItem(stepExecution, item, currentItemCount+i));
     }
 
-    /*Should return progress in percents (integer)*/
-    getProgress(stepExecution) {
-        return Math.round(this.getCurrentItemCount(stepExecution) * 100 / this.getTotalItemCount(stepExecution));
+    /*Should return progress object with fields:
+     * current
+     * total */
+    getProgress(stepExecution){
+        return {
+            total: this.getTotalItemCount(stepExecution),
+            current: this.getCurrentItemCount(stepExecution)
+        }
     }
 
     updateJobProgress(stepExecution) {
