@@ -13,7 +13,8 @@ export class Decision{
 
     static generateKey(decision, keyProperty='$id'){
         var e = decision.node.childEdges[decision.decisionValue];
-        return decision.node[keyProperty]+":"+(e[keyProperty]? e[keyProperty] : decision.decisionValue+1);
+        var key = decision.node[keyProperty]+":"+(e[keyProperty]? e[keyProperty] : decision.decisionValue+1);
+        return key.replace(/\n/g, ' ');
     }
 
     addDecision(node, decisionValue){
@@ -39,24 +40,34 @@ export class Decision{
         }
     }
 
-    static toDecisionString(decision, indent=false, keyProperty='name'){
+    static toDecisionString(decision, extended=false, keyProperty='name', indent = ''){
 
         var res = Decision.generateKey(decision, keyProperty);
         var childrenRes = "";
+
         decision.children.forEach(d=>{
             if(childrenRes){
-                childrenRes += ", "
+                if(extended){
+                    childrenRes += '\n'+indent;
+                }else{
+                    childrenRes += ", "
+                }
+
             }
-            childrenRes += Decision.toDecisionString(d,indent)
+            childrenRes += Decision.toDecisionString(d,extended,keyProperty, indent+'\t')
         });
         if(decision.children.length){
-            childrenRes = "(" + childrenRes + ")";
-        }
-        if(childrenRes.length){
-            res += " - " +childrenRes;
+            if(extended){
+                childrenRes =  '\n'+indent +childrenRes;
+            }else{
+                childrenRes = " - (" + childrenRes + ")";
+            }
+
+
+
         }
 
-        return res;
+        return res+childrenRes;
     }
 
     toDecisionString(indent=false){

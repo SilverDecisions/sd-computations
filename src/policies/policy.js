@@ -45,13 +45,20 @@ export class Policy{
         return null;
     }
 
-    static toPolicyString(policy, indent=false, prependId=false){
+    static toPolicyString(policy, extended=false, prependId=false){
+
         var res = "";
         policy.decisions.forEach(d=>{
             if(res){
-                res += ", "
+                if(extended){
+                    res += "\n"
+                }else{
+                    res += ", "
+                }
+
+
             }
-            res += Decision.toDecisionString(d, indent);
+            res += Decision.toDecisionString(d, extended, 'name', '\t');
         });
         if(prependId && policy.id!==undefined){
             return policy.id+" "+res;

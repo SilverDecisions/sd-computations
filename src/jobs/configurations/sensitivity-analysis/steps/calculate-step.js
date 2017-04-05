@@ -1,6 +1,5 @@
 import {Utils} from "sd-utils";
 import {ExpressionEngine} from "sd-expression-engine";
-
 import {BatchStep} from "../../../engine/batch/batch-step";
 import {TreeValidator} from "../../../../validation/tree-validator";
 import {Policy} from "../../../../policies/policy";
@@ -20,34 +19,33 @@ export class CalculateStep extends BatchStep {
         var ruleName = params.value("ruleName");
 
         this.objectiveRulesManager.setCurrentRuleByName(ruleName);
-        var variableValues = jobExecutionContext.get("variableValues");
+        var variableValues = jobResult.data.variableValues;
         var variableNames = params.value("variables").map(v=>v.name);
         stepExecution.executionContext.put("variableNames", variableNames);
 
-        if(!jobResult.data){
+
+        if (!jobResult.data.headers) {
             var headers = ['policy'];
             variableNames.forEach(n=>headers.push(n));
             headers.push('payoff');
-            jobResult.data = {
-                headers:headers,
-                rows: [],
-                variableNames: variableNames,
-                policies: jobExecutionContext.get("policies")
-            };
+
+            jobResult.data.headers = headers;
+            jobResult.data.rows = [];
+            jobResult.data.variableNames = variableNames;
+
         }
 
         return variableValues.length;
     }
 
 
-    readNextChunk(stepExecution, startIndex, chunkSize) {
-        var variableValues = stepExecution.getJobExecutionContext().get("variableValues");
+    readNextChunk(stepExecution, startIndex, chunkSize, jobResult) {
+        var variableValues = jobResult.data.variableValues;
         return variableValues.slice(startIndex, startIndex + chunkSize);
     }
 
     processItem(stepExecution, item) {
         var params = stepExecution.getJobParameters();
-        var preserveDataModel = params.value("preserveDataModel");
         var ruleName = params.value("ruleName");
         var data = stepExecution.getData();
         var treeRoot = data.getRoots()[0];
@@ -63,19 +61,17 @@ export class CalculateStep extends BatchStep {
         var vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
 
         var valid = vr.isValid();
-        var payoffs=[];
-        var dataList=[];
-        policies.forEach(policy=>{
+        var payoffs = [];
+        var dataList = [];
+        policies.forEach(policy=> {
             var payoff = 'n/a';
             if (valid) {
                 this.objectiveRulesManager.recomputeTree(treeRoot, false, policy);
                 payoff = treeRoot.computedValue(ruleName, 'payoff');
             }
 
+
             payoffs.push(payoff);
-            if(preserveDataModel){
-                dataList.push(data.getDTO())
-            }
         });
 
         return {
@@ -88,33 +84,34 @@ export class CalculateStep extends BatchStep {
 
     writeChunk(stepExecution, items, jobResult) {
         var params = stepExecution.getJobParameters();
-        var preserveDataModel = params.value("preserveDataModel");
+        var extendedPolicyDescription = params.value("extendedPolicyDescription");
 
-        items.forEach(item=>{
-            if(!item){
+        items.forEach(item=> {
+            if (!item) {
                 return;
             }
-            item.policies.forEach((policy,i)=>{
-                var rowCells = [Policy.toPolicyString(policy)];
-                item.variables.forEach(v=>{
+            item.policies.forEach((policy, i)=> {
+                var rowCells = [Policy.toPolicyString(policy, extendedPolicyDescription)];
+                item.variables.forEach(v=> {
                     rowCells.push(this.toFloat(v))
                 });
                 var payoff = item.payoffs[i];
-                rowCells.push(Utils.isString(payoff)? payoff: this.toFloat(payoff));
+                rowCells.push(Utils.isString(payoff) ? payoff : this.toFloat(payoff));
                 var row = {
                     cells: rowCells,
                     policyIndex: i,
                 };
-                if(preserveDataModel){
-                    row.data =  item.dataList[i]
-                }
                 jobResult.data.rows.push(row);
             })
         })
     }
 
+    postProcess(stepExecution, jobResult) {
+        delete jobResult.data.variableValues;
+    }
 
-    toFloat(v){
+
+    toFloat(v) {
         return ExpressionEngine.toFloat(v);
     }
 }

@@ -57,7 +57,6 @@ export class CalculateStep extends BatchStep {
 
     processItem(stepExecution, item, itemIndex) {
         var params = stepExecution.getJobParameters();
-        var preserveDataModel = params.value("preserveDataModel");
         var ruleName = params.value("ruleName");
         var data = stepExecution.getData();
         var treeRoot = data.getRoots()[0];
@@ -97,9 +96,6 @@ export class CalculateStep extends BatchStep {
                 variableValue: variableValue,
                 payoff: payoff
             };
-            if(preserveDataModel){
-                r.data = data.getDTO();
-            }
             results.push(r)
         });
 
@@ -109,7 +105,7 @@ export class CalculateStep extends BatchStep {
 
     writeChunk(stepExecution, items, jobResult) {
         var params = stepExecution.getJobParameters();
-        var preserveDataModel = params.value("preserveDataModel");
+
         var policyByKey = stepExecution.getJobExecutionContext().get("policyByKey");
         var policies = stepExecution.getJobExecutionContext().get("policies");
 
@@ -137,9 +133,6 @@ export class CalculateStep extends BatchStep {
                         cells: rowCells,
                         policyIndex: policies.indexOf(policyByKey[policy.key]),
                     };
-                    if(preserveDataModel){
-                        row.data =  item.data
-                    }
                     jobResult.data.rows.push(row);
                 })
             })

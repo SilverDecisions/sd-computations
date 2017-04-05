@@ -7,13 +7,14 @@ export class InitPoliciesStep extends Step {
         super("init_policies", jobRepository);
     }
 
-    doExecute(stepExecution, result) {
+    doExecute(stepExecution, jobResult) {
         var data = stepExecution.getData();
         var treeRoot = data.getRoots()[0];
         var policiesCollector = new PoliciesCollector(treeRoot);
 
         var policies = policiesCollector.policies;
         stepExecution.getJobExecutionContext().put("policies", policies);
+        jobResult.data.policies = policies;
 
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;
         return stepExecution;

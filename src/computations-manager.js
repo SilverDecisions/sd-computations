@@ -8,7 +8,8 @@ import {ExpressionsEvaluator} from "./expressions-evaluator";
 import {JobDataInvalidException} from "./jobs/engine/exceptions/job-data-invalid-exception";
 import {JobParametersInvalidException} from "./jobs/engine/exceptions/job-parameters-invalid-exception";
 import {JobInstanceManager} from "./jobs/job-instance-manager";
-
+import {domain as model} from 'sd-model'
+import {Policy} from "./policies/policy";
 
 export class ComputationsManagerConfig {
 
@@ -128,7 +129,18 @@ export class ComputationsManager {
         });
     }
 
-    updateDisplayValues(data) {
+    //Checks validity of data model without recomputation and revalidation
+    isValid(data){
+        var data = data || this.data;
+        return data.validationResults.every(vr=>vr.isValid());
+    }
+
+    updateDisplayValues(data, policyToDisplay=null) {
+        data = data || this.data;
+        if(policyToDisplay){
+            return this.displayPolicy(data, policyToDisplay);
+        }
+
         data.nodes.forEach(n=> {
             this.updateNodeDisplayValues(n);
         });
@@ -143,5 +155,34 @@ export class ComputationsManager {
 
     updateEdgeDisplayValues(e) {
         e.$DISPLAY_VALUE_NAMES.forEach(n=>e.displayValue(n, this.objectiveRulesManager.getEdgeDisplayValue(e, n)));
+    }
+
+    displayPolicy(policyToDisplay, data) {
+
+
+        data = data || this.data;
+        data.nodes.forEach(n=>{
+            n.clearDisplayValues();
+        });
+        data.edges.forEach(e=>{
+            e.clearDisplayValues();
+        });
+        data.getRoots().forEach((root)=>this.displayPolicyForNode(root,policyToDisplay));
+    }
+
+    displayPolicyForNode(node, policy){
+        if(node instanceof model.DecisionNode) {
+            var decision = Policy.getDecision(policy, node);
+            //console.log(decision, node, policy);
+            if(decision){
+                node.displayValue('optimal', true)
+                var childEdge = node.childEdges[decision.decisionValue];
+                childEdge.displayValue('optimal', true)
+                return this.displayPolicyForNode(childEdge.childNode, policy)
+            }
+            return;
+        }
+
+        node.childEdges.forEach(e=>this.displayPolicyForNode(e.childNode, policy))
     }
 }

@@ -56,7 +56,7 @@ export class JobInstanceManager extends JobExecutionListener {
     checkProgress() {
 
         var self = this;
-        if (!this.lastJobExecution.isRunning() || this.getProgressPercents(this.progress) === 100) {
+        if (this.terminated || !this.lastJobExecution.isRunning() || this.getProgressPercents(this.progress) === 100) {
             return;
         }
         this.jobsManger.getProgress(this.lastJobExecution).then(progress=> {
@@ -73,7 +73,7 @@ export class JobInstanceManager extends JobExecutionListener {
     }
 
     beforeJob(jobExecution) {
-        if(jobExecution.jobInstance.id !== this.jobInstance.id) {
+        if (jobExecution.jobInstance.id !== this.jobInstance.id) {
             return;
         }
 
@@ -81,20 +81,20 @@ export class JobInstanceManager extends JobExecutionListener {
         this.config.onJobStarted.call(this.config.callbacksThisArg || this);
     }
 
-    getProgressPercents(progress){
-        if(!progress){
+    getProgressPercents(progress) {
+        if (!progress) {
             return 0;
         }
         return progress.current * 100 / progress.total;
     }
 
-    getProgressFromExecution(jobExecution){
+    getProgressFromExecution(jobExecution) {
         var job = this.jobsManger.getJobByName(jobExecution.jobInstance.jobName);
         return job.getProgress(jobExecution);
     }
 
     afterJob(jobExecution) {
-        if(jobExecution.jobInstance.id !== this.jobInstance.id) {
+        if (jobExecution.jobInstance.id !== this.jobInstance.id) {
             return;
         }
         this.lastJobExecution = jobExecution;
@@ -102,12 +102,11 @@ export class JobInstanceManager extends JobExecutionListener {
             this.jobsManger.deregisterJobExecutionListener(this);
             this.progress = this.getProgressFromExecution(jobExecution);
             this.config.onProgress.call(this.config.callbacksThisArg || this, this.progress);
-            this.jobsManger.getResult(jobExecution.jobInstance).then(result=>{
+            this.jobsManger.getResult(jobExecution.jobInstance).then(result=> {
                 this.config.onJobCompleted.call(this.config.callbacksThisArg || this, result.data);
-            }).catch(e=>{
+            }).catch(e=> {
                 log.error(e);
             })
-
 
 
         } else if (JOB_STATUS.FAILED === jobExecution.status) {
@@ -136,10 +135,10 @@ export class JobInstanceManager extends JobExecutionListener {
 
     resume() {
         return this.getLastJobExecution().then(()=> {
-            return this.jobsManger.run(this.jobInstance.jobName, this.lastJobExecution.jobParameters.values, this.lastJobExecution.getData()).then(je=>{
+            return this.jobsManger.run(this.jobInstance.jobName, this.lastJobExecution.jobParameters.values, this.lastJobExecution.getData()).then(je=> {
                 this.lastJobExecution = je;
                 this.checkProgress();
-            }).catch(e=>{
+            }).catch(e=> {
                 log.error(e);
             })
         })
@@ -148,11 +147,13 @@ export class JobInstanceManager extends JobExecutionListener {
     terminate() {
         return this.getLastJobExecution().then(()=> {
             return this.jobsManger.terminate(this.jobInstance).then(()=> {
+                this.terminated = true;
                 this.config.onJobTerminated.call(this.config.callbacksThisArg || this, this.lastJobExecution);
                 this.jobsManger.deregisterJobExecutionListener(this);
+
                 return this.lastJobExecution;
             })
-        }).catch(e=>{
+        }).catch(e=> {
             log.error(e);
         })
     }

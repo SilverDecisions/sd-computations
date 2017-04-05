@@ -25,7 +25,7 @@ export class BatchStep extends Step {
     /**
      * Extension point for subclasses to read and return chunk of items to process
      */
-    readNextChunk(stepExecution, startIndex, chunkSize) {
+    readNextChunk(stepExecution, startIndex, chunkSize, jobResult) {
         throw "BatchStep.readNextChunk function not implemented for step: " + this.name;
     }
 
@@ -33,7 +33,7 @@ export class BatchStep extends Step {
      * Extension point for subclasses to process single item
      * Must return processed item which will be passed in a chunk to writeChunk function
      */
-    processItem(stepExecution, item) {
+    processItem(stepExecution, item, jobResult) {
         throw "BatchStep.processItem function not implemented for step: " + this.name;
     }
 
@@ -113,14 +113,14 @@ export class BatchStep extends Step {
             return stepExecution
         }).then(()=> {
             return Promise.resolve().then(()=>{
-                return this.readNextChunk(stepExecution, currentItemCount, chunkSize)
+                return this.readNextChunk(stepExecution, currentItemCount, chunkSize, jobResult)
             }).catch(e=> {
                 log.error("Failed to read chunk (" + currentItemCount + "," + chunkSize + ") in batch step: " + this.name, e);
                 throw e;
             });
         }).then(chunk=> {
             return Promise.resolve().then(()=>{
-                return this.processChunk(stepExecution, chunk, currentItemCount)
+                return this.processChunk(stepExecution, chunk, currentItemCount, jobResult)
             }).catch(e=> {
                 log.error("Failed to process chunk (" + currentItemCount + "," + chunkSize + ") in batch step: " + this.name, e);
                 throw e;
@@ -141,8 +141,8 @@ export class BatchStep extends Step {
         })
     }
 
-    processChunk(stepExecution, chunk, currentItemCount) { //TODO promisify
-        return chunk.map((item, i)=>this.processItem(stepExecution, item, currentItemCount+i));
+    processChunk(stepExecution, chunk, currentItemCount, jobResult) { //TODO promisify
+        return chunk.map((item, i)=>this.processItem(stepExecution, item, currentItemCount+i, jobResult));
     }
 
     /*Should return progress object with fields:

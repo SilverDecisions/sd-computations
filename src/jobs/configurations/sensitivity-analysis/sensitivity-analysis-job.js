@@ -9,7 +9,7 @@ export class SensitivityAnalysisJob extends SimpleJob {
 
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
         super("sensitivity-analysis", jobRepository);
-        this.addStep(new PrepareVariablesStep(jobRepository));
+        this.addStep(new PrepareVariablesStep(jobRepository, expressionsEvaluator.expressionEngine));
         this.addStep(new InitPoliciesStep(jobRepository));
         this.addStep(new CalculateStep(jobRepository, expressionsEvaluator, objectiveRulesManager));
     }

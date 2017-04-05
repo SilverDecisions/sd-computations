@@ -9,7 +9,7 @@ export class PrepareVariablesStep extends Step {
         this.expressionEngine = expressionEngine;
     }
 
-    doExecute(stepExecution) {
+    doExecute(stepExecution, jobResult) {
         var params = stepExecution.getJobParameters();
         var numberOfRuns = params.value("numberOfRuns");
         var variables = params.value("variables");
@@ -25,21 +25,23 @@ export class PrepareVariablesStep extends Step {
             variableValues.push(singleRunVariableValues)
         }
 
-        stepExecution.getJobExecutionContext().put("variableValues", variableValues);
+        jobResult.data={
+            variableValues: variableValues
+        };
 
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;
         return stepExecution;
     }
 
     sequence(min, max, length) {
-        var extent = max - min;
-        var step = extent / (length - 1);
+        var extent = ExpressionEngine.subtract(max, min);
+        var step = ExpressionEngine.divide(extent,length - 1);
         var result = [min];
         var curr = min;
 
         for (var i = 0; i < length - 2; i++) {
-            curr += step;
-            result.push(curr);
+            curr = ExpressionEngine.add(curr, step);
+            result.push(ExpressionEngine.toFloat(curr));
         }
         result.push(max);
         return result;
