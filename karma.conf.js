@@ -24,6 +24,10 @@ module.exports = function (config) {
             { pattern:  'test/data/*.json',
                 watched:  true,
                 served:   true,
+                included: false },
+            { pattern:  'test/trees/*.json',
+                watched:  true,
+                served:   true,
                 included: false }
         ],
 

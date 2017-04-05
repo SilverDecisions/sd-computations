@@ -10,17 +10,16 @@ describe("Policies from", () => {
 
     fixtures.fixturesPath = "base/test/";
     var fileList = JSON.parse(readFixtures("data-json-filelist.json"));
-    fixtures.fixturesPath = "base/test/data";
 
     fileList.filter(n=>true).forEach(function (fileName) {
-        var rawJsonString = readFixtures(fileName);
+
 
         describe(fileName+":", function(){
             var data;
             var collector;
             var policies;
 
-            var json = JSON.parse(rawJsonString);
+            var json = loadData(fileName);
             data = new DataModel(json.data);
             policies = json.policies;
 
@@ -47,3 +46,10 @@ describe("Policies from", () => {
     });
 
 });
+
+
+function loadData(fileName){
+    var o = JSON.parse(readFixtures("data/"+fileName));
+    o.data = JSON.parse(readFixtures("trees/"+o.treeFile)).data;
+    return o;
+}

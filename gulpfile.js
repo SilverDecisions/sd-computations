@@ -44,7 +44,7 @@ gulp.task('build-clean', ['clean'], function () {
     return gulp.start('build');
 });
 
-gulp.task('build', ['build-standalone', 'build-module'], function () {
+gulp.task('build', ['build-standalone', 'build-module' ,'build-vendor'], function () {
 });
 
 gulp.task('build-standalone', function () {

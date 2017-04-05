@@ -32,18 +32,4 @@ export class PrepareVariablesStep extends Step {
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;
         return stepExecution;
     }
-
-    sequence(min, max, length) {
-        var extent = ExpressionEngine.subtract(max, min);
-        var step = ExpressionEngine.divide(extent,length - 1);
-        var result = [min];
-        var curr = min;
-
-        for (var i = 0; i < length - 2; i++) {
-            curr = ExpressionEngine.add(curr, step);
-            result.push(ExpressionEngine.toFloat(curr));
-        }
-        result.push(max);
-        return result;
-    }
 }
