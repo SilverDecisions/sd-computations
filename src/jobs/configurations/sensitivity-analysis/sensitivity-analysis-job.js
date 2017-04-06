@@ -31,7 +31,7 @@ export class SensitivityAnalysisJob extends SimpleJob {
     jobResultToCsvRows(jobResult, jobParameters, withHeaders=true){
         var result = [];
         if(withHeaders){
-            var headers = ['policy number', 'policy'];
+            var headers = ['policy_number', 'policy'];
             jobResult.variableNames.forEach(n=>headers.push(n));
             headers.push('payoff');
             result.push(headers);
