@@ -8,11 +8,7 @@ export class ExpectedValueMaximizationRule extends ObjectiveRule{
     static NAME = 'expected-value-maximization';
 
     constructor(expressionEngine){
-        super(ExpectedValueMaximizationRule.NAME, expressionEngine);
-    }
-
-    makeDecision(decisionNode, childrenPayoffs){
-        return Utils.indexesOf(childrenPayoffs, this.max(...childrenPayoffs));
+        super(ExpectedValueMaximizationRule.NAME, true, expressionEngine);
     }
 
     //  payoff - parent edge payoff

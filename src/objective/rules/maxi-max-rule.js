@@ -8,12 +8,9 @@ export class MaxiMaxRule extends ObjectiveRule{
     static NAME = 'maxi-max';
 
     constructor(expressionEngine){
-        super(MaxiMaxRule.NAME, expressionEngine);
+        super(MaxiMaxRule.NAME, true, expressionEngine);
     }
 
-    makeDecision(decisionNode, childrenPayoffs){
-        return Utils.indexesOf(childrenPayoffs, this.max(...childrenPayoffs));
-    }
 
     modifyChanceProbability(edges, bestChildPayoff, bestCount, worstChildPayoff, worstCount){
         edges.forEach(e=>{

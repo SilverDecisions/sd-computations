@@ -8,11 +8,7 @@ export class ExpectedValueMinimizationRule extends ObjectiveRule{
     static NAME = 'expected-value-minimization';
 
     constructor(expressionEngine){
-        super(ExpectedValueMinimizationRule.NAME, expressionEngine);
-    }
-
-    makeDecision(decisionNode, childrenPayoffs){
-        return Utils.indexesOf(childrenPayoffs, this.min(...childrenPayoffs));
+        super(ExpectedValueMinimizationRule.NAME, false, expressionEngine);
     }
 
     //  payoff - parent edge payoff

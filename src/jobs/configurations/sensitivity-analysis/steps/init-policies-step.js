@@ -14,6 +14,11 @@ export class InitPoliciesStep extends Step {
 
         var policies = policiesCollector.policies;
         stepExecution.getJobExecutionContext().put("policies", policies);
+
+        if(!jobResult.data){
+            jobResult.data=[]
+        }
+
         jobResult.data.policies = policies;
 
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;

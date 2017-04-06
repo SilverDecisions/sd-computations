@@ -2,6 +2,7 @@ import {ExpressionEngine} from 'sd-expression-engine'
 import {domain as model} from 'sd-model'
 import {Decision} from "../../policies/decision";
 import {Policy} from "../../policies/policy";
+import {Utils} from "sd-utils";
 
 /*Base class for objective rules*/
 export class ObjectiveRule{
@@ -9,9 +10,11 @@ export class ObjectiveRule{
     expressionEngine;
 
     decisionPolicy;
+    maximization;
 
-    constructor(name, expressionEngine){
+    constructor(name, maximization, expressionEngine){
         this.name = name;
+        this.maximization = maximization;
         this.expressionEngine = expressionEngine;
     }
 
@@ -25,7 +28,10 @@ export class ObjectiveRule{
 
     // should return array of selected children indexes
     makeDecision(decisionNode, childrenPayoffs){
-        throw 'makeDecision function not implemented for rule: '+this.name
+        if(this.maximization){
+            return Utils.indexesOf(childrenPayoffs, this.max(...childrenPayoffs));
+        }
+        return Utils.indexesOf(childrenPayoffs, this.min(...childrenPayoffs));
     }
 
     _makeDecision(decisionNode, childrenPayoffs){

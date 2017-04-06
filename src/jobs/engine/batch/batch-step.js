@@ -33,7 +33,7 @@ export class BatchStep extends Step {
      * Extension point for subclasses to process single item
      * Must return processed item which will be passed in a chunk to writeChunk function
      */
-    processItem(stepExecution, item, jobResult) {
+    processItem(stepExecution, item, currentItemCount, jobResult) {
         throw "BatchStep.processItem function not implemented for step: " + this.name;
     }
 

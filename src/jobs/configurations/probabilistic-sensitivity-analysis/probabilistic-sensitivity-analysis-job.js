@@ -1,40 +1,38 @@
-import {SimpleJob} from "../../engine/simple-job";
 import {ProbabilisticSensitivityAnalysisJobParameters} from "./probabilistic-sensitivity-analysis-job-parameters";
-import {PrepareVariablesStep} from "./steps/prepare-variables-step";
 import {InitPoliciesStep} from "../sensitivity-analysis/steps/init-policies-step";
-import {CalculateStep} from "../sensitivity-analysis/steps/calculate-step";
+import {SensitivityAnalysisJob} from "../sensitivity-analysis/sensitivity-analysis-job";
+import {ProbCalculateStep} from "./steps/prob-calculate-step";
+import {ComputePolicyStatsStep} from "./steps/compute-policy-stats-step";
 
-export class ProbabilisticSensitivityAnalysisJob extends SimpleJob {
+export class ProbabilisticSensitivityAnalysisJob extends SensitivityAnalysisJob {
 
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
-        super("probabilistic-sensitivity-analysis", jobRepository);
-        this.addStep(new PrepareVariablesStep(expressionsEvaluator.expressionEngine, jobRepository));
-        this.addStep(new InitPoliciesStep(jobRepository));
-        this.addStep(new CalculateStep(jobRepository, expressionsEvaluator, objectiveRulesManager));
+        super(jobRepository, expressionsEvaluator, objectiveRulesManager);
+        this.name = "probabilistic-sensitivity-analysis";
+    }
+
+    initSteps() {
+        this.addStep(new InitPoliciesStep(this.jobRepository));
+        this.addStep(new ProbCalculateStep(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.addStep(new ComputePolicyStatsStep(this.expressionsEvaluator.expressionEngine, this.objectiveRulesManager, this.jobRepository));
     }
 
     createJobParameters(values) {
         return new ProbabilisticSensitivityAnalysisJobParameters(values);
     }
 
-    getJobDataValidator() {
-        return {
-            validate: (data) => data.getRoots().length === 1
-        }
-    }
-
     /*Should return progress object with fields:
      * current
      * total */
-    getProgress(execution){
+    getProgress(execution) {
 
-        if (execution.stepExecutions.length <= 2) {
+        if (execution.stepExecutions.length <= 1) {
             return {
                 total: 1,
                 current: 0
             };
         }
 
-        return this.steps[2].getProgress(execution.stepExecutions[2]);
+        return this.steps[1].getProgress(execution.stepExecutions[1]);
     }
 }

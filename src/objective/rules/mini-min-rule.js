@@ -8,11 +8,7 @@ export class MiniMinRule extends ObjectiveRule{
     static NAME = 'mini-min';
 
     constructor(expressionEngine){
-        super(MiniMinRule.NAME, expressionEngine);
-    }
-
-    makeDecision(decisionNode, childrenPayoffs){
-        return Utils.indexesOf(childrenPayoffs, this.min(...childrenPayoffs));
+        super(MiniMinRule.NAME, false, expressionEngine);
     }
 
     modifyChanceProbability(edges, bestChildPayoff, bestCount, worstChildPayoff, worstCount){

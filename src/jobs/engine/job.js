@@ -20,11 +20,13 @@ export class Job {
 
     jobRepository;
 
-    constructor(name, jobRepository) {
+    constructor(name, jobRepository, expressionsEvaluator, objectiveRulesManager) {
         this.name = name;
         this.jobParametersValidator = this.getJobParametersValidator();
         this.jobDataValidator = this.getJobDataValidator();
         this.jobRepository = jobRepository;
+        this.expressionsEvaluator = expressionsEvaluator;
+        this.objectiveRulesManager = objectiveRulesManager;
     }
 
     setJobRepository(jobRepository) {
@@ -167,5 +169,9 @@ export class Job {
 
     getResult(execution) {
         return this.jobRepository.getJobResultByInstance(execution.jobInstance);
+    }
+
+    jobResultToCsvRows(jobResult, jobParameters){
+        throw 'jobResultToCsvRows function not implemented for job: ' + this.name
     }
 }

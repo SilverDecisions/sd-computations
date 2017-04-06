@@ -24,15 +24,9 @@ export class CalculateStep extends BatchStep {
         stepExecution.executionContext.put("variableNames", variableNames);
 
 
-        if (!jobResult.data.headers) {
-            var headers = ['policy'];
-            variableNames.forEach(n=>headers.push(n));
-            headers.push('payoff');
-
-            jobResult.data.headers = headers;
+        if (!jobResult.data.rows) {
             jobResult.data.rows = [];
             jobResult.data.variableNames = variableNames;
-
         }
 
         return variableValues.length;
@@ -62,20 +56,17 @@ export class CalculateStep extends BatchStep {
 
         var valid = vr.isValid();
         var payoffs = [];
-        var dataList = [];
+
         policies.forEach(policy=> {
             var payoff = 'n/a';
             if (valid) {
                 this.objectiveRulesManager.recomputeTree(treeRoot, false, policy);
                 payoff = treeRoot.computedValue(ruleName, 'payoff');
             }
-
-
             payoffs.push(payoff);
         });
 
         return {
-            dataList: dataList,
             policies: policies,
             variables: item,
             payoffs: payoffs
@@ -91,15 +82,13 @@ export class CalculateStep extends BatchStep {
                 return;
             }
             item.policies.forEach((policy, i)=> {
-                var rowCells = [Policy.toPolicyString(policy, extendedPolicyDescription)];
-                item.variables.forEach(v=> {
-                    rowCells.push(this.toFloat(v))
-                });
+                var variables = item.variables.map(v => this.toFloat(v));
+
                 var payoff = item.payoffs[i];
-                rowCells.push(Utils.isString(payoff) ? payoff : this.toFloat(payoff));
                 var row = {
-                    cells: rowCells,
                     policyIndex: i,
+                    variables: variables,
+                    payoff: Utils.isString(payoff) ? payoff : this.toFloat(payoff)
                 };
                 jobResult.data.rows.push(row);
             })

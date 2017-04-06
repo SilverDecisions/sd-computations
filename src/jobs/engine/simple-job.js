@@ -13,8 +13,14 @@ import {JOB_EXECUTION_FLAG} from "./job-execution-flag";
 
 export class SimpleJob extends Job {
 
-    constructor(name, jobRepository) {
-        super(name, jobRepository)
+    constructor(name, jobRepository, expressionsEvaluator, objectiveRulesManager) {
+        super(name, jobRepository, expressionsEvaluator, objectiveRulesManager)
+        this.initSteps();
+    }
+
+
+    initSteps(){
+
     }
 
     getStep(stepName) {
