@@ -8,14 +8,17 @@ import {Policy} from "../../../policies/policy";
 
 export class SensitivityAnalysisJob extends SimpleJob {
 
-    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
+    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager, batchSize=5) {
         super("sensitivity-analysis", jobRepository, expressionsEvaluator, objectiveRulesManager);
+        this.batchSize = 5;
+        this.initSteps();
     }
 
     initSteps(){
         this.addStep(new PrepareVariablesStep(this.jobRepository, this.expressionsEvaluator.expressionEngine));
         this.addStep(new InitPoliciesStep(this.jobRepository));
-        this.addStep(new CalculateStep(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.calculateStep = new CalculateStep(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager, this.batchSize);
+        this.addStep(this.calculateStep);
     }
 
     createJobParameters(values) {
@@ -26,6 +29,11 @@ export class SensitivityAnalysisJob extends SimpleJob {
         return {
             validate: (data) => data.getRoots().length === 1
         }
+    }
+
+    setBatchSize(batchSize){
+        this.batchSize = batchSize;
+        this.calculateStep.chunkSize = batchSize;
     }
 
     jobResultToCsvRows(jobResult, jobParameters, withHeaders=true){

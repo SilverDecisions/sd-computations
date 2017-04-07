@@ -6,8 +6,8 @@ import {Policy} from "../../../../policies/policy";
 
 export class CalculateStep extends BatchStep {
 
-    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
-        super("calculate_step", jobRepository, 5);
+    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager, batchSize) {
+        super("calculate_step", jobRepository, batchSize);
         this.expressionsEvaluator = expressionsEvaluator;
         this.objectiveRulesManager = objectiveRulesManager;
         this.treeValidator = new TreeValidator();

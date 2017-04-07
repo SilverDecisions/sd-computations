@@ -49,14 +49,17 @@ export class JobsManager extends JobExecutionListener {
         this.expressionsEvaluator = expressionsEvaluator;
         this.objectiveRulesManager = objectiveRulesManager;
 
-        this.initRepository();
-
-        this.registerJobs();
 
         this.useWorker = !!this.config.workerUrl;
         if (this.useWorker) {
             this.initWorker(this.config.workerUrl);
         }
+
+        this.initRepository();
+
+        this.registerJobs();
+
+
 
         this.jobLauncher = new JobLauncher(this.jobRepository, this.jobWorker, (data)=>this.serializeData(data));
     }
@@ -182,9 +185,17 @@ export class JobsManager extends JobExecutionListener {
     }
 
     registerJobs() {
-        this.registerJob(new SensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+
+        let sensitivityAnalysisJob = new SensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager);
+        let probabilisticSensitivityAnalysisJob = new ProbabilisticSensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager);
+        if(!Utils.isWorker()){
+            sensitivityAnalysisJob.setBatchSize(1);
+            probabilisticSensitivityAnalysisJob.setBatchSize(1);
+        }
+
+        this.registerJob(sensitivityAnalysisJob);
         this.registerJob(new TornadoDiagramJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
-        this.registerJob(new ProbabilisticSensitivityAnalysisJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.registerJob(probabilisticSensitivityAnalysisJob);
         this.registerJob(new RecomputeJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
     }
 

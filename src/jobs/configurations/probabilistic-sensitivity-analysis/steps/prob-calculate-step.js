@@ -7,8 +7,6 @@ import {CalculateStep} from "../../sensitivity-analysis/steps/calculate-step";
 
 export class ProbCalculateStep extends CalculateStep {
 
-
-
     init(stepExecution, jobResult) {
         var jobExecutionContext = stepExecution.getJobExecutionContext();
         var params = stepExecution.getJobParameters();

@@ -6,14 +6,15 @@ import {ComputePolicyStatsStep} from "./steps/compute-policy-stats-step";
 
 export class ProbabilisticSensitivityAnalysisJob extends SensitivityAnalysisJob {
 
-    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
-        super(jobRepository, expressionsEvaluator, objectiveRulesManager);
+    constructor(jobRepository, expressionsEvaluator, objectiveRulesManager, batchSize=5) {
+        super(jobRepository, expressionsEvaluator, objectiveRulesManager, batchSize);
         this.name = "probabilistic-sensitivity-analysis";
     }
 
     initSteps() {
         this.addStep(new InitPoliciesStep(this.jobRepository));
-        this.addStep(new ProbCalculateStep(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.calculateStep = new ProbCalculateStep(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager, this.batchSize);
+        this.addStep(this.calculateStep);
         this.addStep(new ComputePolicyStatsStep(this.expressionsEvaluator.expressionEngine, this.objectiveRulesManager, this.jobRepository));
     }
 

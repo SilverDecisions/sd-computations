@@ -15,12 +15,6 @@ export class SimpleJob extends Job {
 
     constructor(name, jobRepository, expressionsEvaluator, objectiveRulesManager) {
         super(name, jobRepository, expressionsEvaluator, objectiveRulesManager)
-        this.initSteps();
-    }
-
-
-    initSteps(){
-
     }
 
     getStep(stepName) {
