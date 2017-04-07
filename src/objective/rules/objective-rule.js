@@ -28,10 +28,19 @@ export class ObjectiveRule{
 
     // should return array of selected children indexes
     makeDecision(decisionNode, childrenPayoffs){
+        var best;
         if(this.maximization){
-            return Utils.indexesOf(childrenPayoffs, this.max(...childrenPayoffs));
+            best = this.max(...childrenPayoffs);
+        }else{
+            best = this.min(...childrenPayoffs);
         }
-        return Utils.indexesOf(childrenPayoffs, this.min(...childrenPayoffs));
+        var selectedIndexes = [];
+        childrenPayoffs.forEach((p, i)=>{
+            if(ExpressionEngine.compare(best, p) == 0){
+                selectedIndexes.push(i);
+            }
+        });
+        return selectedIndexes;
     }
 
     _makeDecision(decisionNode, childrenPayoffs){
