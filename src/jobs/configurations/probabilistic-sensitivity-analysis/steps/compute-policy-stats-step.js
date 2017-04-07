@@ -1,4 +1,4 @@
-import {log} from "sd-utils";
+import {log, Utils} from "sd-utils";
 import {Step} from "../../../engine/step";
 import {JOB_STATUS} from "../../../engine/job-status";
 import {ExpressionEngine} from "sd-expression-engine";
@@ -21,7 +21,7 @@ export class ComputePolicyStatsStep extends Step {
         var payoffsPerPolicy = jobResult.data.policies.map(()=>[]);
 
         jobResult.data.rows.forEach(row=> {
-            payoffsPerPolicy[row.policyIndex].push(row.payoff)
+            payoffsPerPolicy[row.policyIndex].push(Utils.isString(row.payoff) ? 0 : row.payoff)
         });
 
         log.debug('payoffsPerPolicy', payoffsPerPolicy, jobResult.data.rows.length, rule.maximization);
@@ -29,9 +29,9 @@ export class ComputePolicyStatsStep extends Step {
         jobResult.data.medians = payoffsPerPolicy.map(payoffs=>ExpressionEngine.median(payoffs));
         jobResult.data.standardDeviations = payoffsPerPolicy.map(payoffs=>ExpressionEngine.std(payoffs));
 
-        if(rule.maximization) {
+        if (rule.maximization) {
             jobResult.data.policyIsBestProbabilities = jobResult.data.policyToHighestPayoffCount.map(v=>ExpressionEngine.toFloat(ExpressionEngine.divide(v, numberOfRuns)));
-        }else{
+        } else {
             jobResult.data.policyIsBestProbabilities = jobResult.data.policyToLowestPayoffCount.map(v=>ExpressionEngine.toFloat(ExpressionEngine.divide(v, numberOfRuns)));
         }
 

@@ -7,6 +7,7 @@ import {JOB_STATUS} from "../job-status";
 import {JobInstanceAlreadyCompleteException} from "../exceptions/job-instance-already-complete-exception";
 import {ExecutionContext} from "../execution-context";
 import {StepExecution} from "../step-execution";
+import {DataModel} from "sd-model";
 
 export class JobRepository {
 
@@ -122,7 +123,9 @@ export class JobRepository {
             // no job found, create one
             jobInstance = this.createJobInstance(jobName, jobParameters);
             var executionContext = new ExecutionContext();
-            executionContext.setData(data);
+            var dataModel = new DataModel();
+            dataModel._setNewState(data.createStateSnapshot());
+            executionContext.setData(dataModel);
             return Promise.all([jobInstance, executionContext]);
         }).then(instanceAndExecutionContext=>{
             var jobExecution = new JobExecution(instanceAndExecutionContext[0], jobParameters);

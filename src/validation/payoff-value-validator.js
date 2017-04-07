@@ -9,11 +9,15 @@ export class PayoffValueValidator{
     }
 
     validate(value){
+
+
         if(value===null || value === undefined){
             return false;
         }
-        var value = ExpressionEngine.toNumber(value);
-        return value.compare(Number.MIN_SAFE_INTEGER) >= 0 && value.compare(Number.MAX_SAFE_INTEGER) <= 0;
+
+        value = ExpressionEngine.toNumber(value);
+        var maxSafeInteger = Number.MAX_SAFE_INTEGER || 9007199254740991; // Number.MAX_SAFE_INTEGER in undefined in IE
+        return ExpressionEngine.compare(value, -maxSafeInteger) >= 0 && ExpressionEngine.compare(value, maxSafeInteger) <= 0;
     }
 
 }

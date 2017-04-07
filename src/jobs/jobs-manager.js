@@ -11,7 +11,20 @@ import {ProbabilisticSensitivityAnalysisJob} from "./configurations/probabilisti
 import {TimeoutJobRepository} from "./engine/job-repository/timeout-job-repository";
 import {TornadoDiagramJob} from "./configurations/tornado-diagram/tornado-diagram-job";
 import {JOB_STATUS} from "./engine/job-status";
+import {SimpleJobRepository} from "./engine/job-repository/simple-job-repository";
 
+
+export class JobsManagerConfig {
+
+    workerUrl = null;
+    repositoryType = 'idb';
+
+    constructor(custom) {
+        if (custom) {
+            Utils.deepExtend(this, custom);
+        }
+    }
+}
 
 export class JobsManager extends JobExecutionListener {
 
@@ -29,22 +42,43 @@ export class JobsManager extends JobExecutionListener {
     afterJobExecutionPromiseResolves = {};
     jobInstancesToTerminate = {};
 
-    constructor(expressionsEvaluator, objectiveRulesManager, workerUrl) {
+    constructor(expressionsEvaluator, objectiveRulesManager, config) {
         super();
+        this.setConfig(config);
         this.expressionEngine = expressionsEvaluator.expressionEngine;
         this.expressionsEvaluator = expressionsEvaluator;
         this.objectiveRulesManager = objectiveRulesManager;
 
-        this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver());
-        // this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
+        this.initRepository();
+
         this.registerJobs();
 
-        this.useWorker = !!workerUrl;
+        this.useWorker = !!this.config.workerUrl;
         if (this.useWorker) {
-            this.initWorker(workerUrl);
+            this.initWorker(this.config.workerUrl);
         }
 
         this.jobLauncher = new JobLauncher(this.jobRepository, this.jobWorker, (data)=>this.serializeData(data));
+    }
+
+    setConfig(config) {
+        this.config = new JobsManagerConfig(config);
+        return this;
+    }
+
+    initRepository() {
+        if(this.config.repositoryType === 'idb'){
+            this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver());
+        }else if('timeout'){
+            this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
+        }else if('simple'){
+            this.jobRepository = new SimpleJobRepository(this.expressionEngine.getJsonReviver());
+        }else{
+            log.error('JobsManager configuration error! Unknown repository type: '+this.config.repositoryType+'. Using default: idb');
+            this.config.repositoryType = 'idb';
+            this.initRepository()
+        }
+
     }
 
     serializeData(data) {
@@ -207,4 +241,6 @@ export class JobsManager extends JobExecutionListener {
         }
         log.debug('onJobFatalError', jobExecutionId, error);
     }
+
+
 }

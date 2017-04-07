@@ -21,9 +21,9 @@ export class ProbCalculateStep extends CalculateStep {
         if(!jobResult.data.rows){
             jobResult.data.rows = [];
             jobResult.data.variableNames = variableNames;
-            jobResult.data.expectedValues = new Array(jobResult.data.policies.length).fill(0);
-            jobResult.data.policyToHighestPayoffCount = new Array(jobResult.data.policies.length).fill(0);
-            jobResult.data.policyToLowestPayoffCount = new Array(jobResult.data.policies.length).fill(0);
+            jobResult.data.expectedValues = Utils.fill(new Array(jobResult.data.policies.length), 0);
+            jobResult.data.policyToHighestPayoffCount = Utils.fill(new Array(jobResult.data.policies.length), 0);
+            jobResult.data.policyToLowestPayoffCount = Utils.fill(new Array(jobResult.data.policies.length), 0);
         }
 
         return params.value("numberOfRuns");
@@ -64,8 +64,13 @@ export class ProbCalculateStep extends CalculateStep {
         var bestPolicyIndexes = [];
         var worstPolicyIndexes = [];
 
+        var zeroNum = ExpressionEngine.toNumber(0);
+
         policies.forEach((policy,i)=>{
             let payoff = r.payoffs[i];
+            if(Utils.isString(payoff)){
+                payoff = zeroNum;
+            }
             if(payoff < lowestPayoff){
                 lowestPayoff = payoff;
                 worstPolicyIndexes = [i];

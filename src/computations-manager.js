@@ -1,14 +1,12 @@
 import {ExpressionEngine} from "sd-expression-engine";
-import {Utils, log} from "sd-utils";
+import {Utils} from "sd-utils";
 import {ObjectiveRulesManager} from "./objective/objective-rules-manager";
 import {TreeValidator} from "./validation/tree-validator";
 import {OperationsManager} from "./operations/operations-manager";
 import {JobsManager} from "./jobs/jobs-manager";
 import {ExpressionsEvaluator} from "./expressions-evaluator";
-import {JobDataInvalidException} from "./jobs/engine/exceptions/job-data-invalid-exception";
-import {JobParametersInvalidException} from "./jobs/engine/exceptions/job-parameters-invalid-exception";
 import {JobInstanceManager} from "./jobs/job-instance-manager";
-import {domain as model} from 'sd-model'
+import {domain as model} from "sd-model";
 import {Policy} from "./policies/policy";
 
 export class ComputationsManagerConfig {
@@ -17,9 +15,10 @@ export class ComputationsManagerConfig {
 
     ruleName = null;
     worker = {
-        delegateRecomputation:false,
+        delegateRecomputation: false,
         url: null
     };
+    jobRepositoryType = 'idb';
 
     constructor(custom) {
         if (custom) {
@@ -39,14 +38,17 @@ export class ComputationsManager {
 
     treeValidator;
 
-    constructor(config, data=null) {
+    constructor(config, data = null) {
         this.data = data;
         this.setConfig(config);
         this.expressionEngine = new ExpressionEngine();
         this.expressionsEvaluator = new ExpressionsEvaluator(this.expressionEngine);
-        this.objectiveRulesManager = new ObjectiveRulesManager(this.data, this.expressionEngine, this.config.ruleName);
+        this.objectiveRulesManager = new ObjectiveRulesManager(this.expressionEngine, this.config.ruleName);
         this.operationsManager = new OperationsManager(this.data, this.expressionEngine);
-        this.jobsManger = new JobsManager(this.expressionsEvaluator, this.objectiveRulesManager, this.config.worker.url);
+        this.jobsManger = new JobsManager(this.expressionsEvaluator, this.objectiveRulesManager, {
+            workerUrl: this.config.worker.url,
+            repositoryType: this.config.jobRepositoryType
+        });
         this.treeValidator = new TreeValidator(this.expressionEngine);
     }
 
@@ -59,7 +61,7 @@ export class ComputationsManager {
         return this.objectiveRulesManager.currentRule;
     }
 
-    getJobByName(jobName){
+    getJobByName(jobName) {
         return this.jobsManger.getJobByName(jobName);
     }
 
@@ -68,7 +70,7 @@ export class ComputationsManager {
     }
 
     runJobWithInstanceManager(name, jobParamsValues, jobInstanceManagerConfig) {
-        return this.runJob(name, jobParamsValues).then(je=>{
+        return this.runJob(name, jobParamsValues).then(je=> {
             return new JobInstanceManager(this.jobsManger, je, jobInstanceManagerConfig);
         })
 
@@ -98,10 +100,10 @@ export class ComputationsManager {
                     evalCode: evalCode,
                     evalNumeric: evalNumeric
                 };
-                if(!allRules){
+                if (!allRules) {
                     params.ruleName = this.getCurrentRule().name;
                 }
-                return this.runJob("recompute", params, this.data, false).then((jobExecution)=>{
+                return this.runJob("recompute", params, this.data, false).then((jobExecution)=> {
                     var d = jobExecution.getData();
                     this.data.updateFrom(d)
                 })
@@ -130,14 +132,14 @@ export class ComputationsManager {
     }
 
     //Checks validity of data model without recomputation and revalidation
-    isValid(data){
+    isValid(data) {
         var data = data || this.data;
         return data.validationResults.every(vr=>vr.isValid());
     }
 
-    updateDisplayValues(data, policyToDisplay=null) {
+    updateDisplayValues(data, policyToDisplay = null) {
         data = data || this.data;
-        if(policyToDisplay){
+        if (policyToDisplay) {
             return this.displayPolicy(data, policyToDisplay);
         }
 
@@ -161,20 +163,20 @@ export class ComputationsManager {
 
 
         data = data || this.data;
-        data.nodes.forEach(n=>{
+        data.nodes.forEach(n=> {
             n.clearDisplayValues();
         });
-        data.edges.forEach(e=>{
+        data.edges.forEach(e=> {
             e.clearDisplayValues();
         });
-        data.getRoots().forEach((root)=>this.displayPolicyForNode(root,policyToDisplay));
+        data.getRoots().forEach((root)=>this.displayPolicyForNode(root, policyToDisplay));
     }
 
-    displayPolicyForNode(node, policy){
-        if(node instanceof model.DecisionNode) {
+    displayPolicyForNode(node, policy) {
+        if (node instanceof model.DecisionNode) {
             var decision = Policy.getDecision(policy, node);
             //console.log(decision, node, policy);
-            if(decision){
+            if (decision) {
                 node.displayValue('optimal', true)
                 var childEdge = node.childEdges[decision.decisionValue];
                 childEdge.displayValue('optimal', true)

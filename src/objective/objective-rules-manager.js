@@ -8,8 +8,7 @@ export class ObjectiveRulesManager{
     currentRule;
     ruleByName={};
 
-    constructor(data, expressionEngine, currentRuleName){
-        this.data = data;
+    constructor(expressionEngine, currentRuleName){
         this.expressionEngine=expressionEngine;
         var max = new ExpectedValueMaximizationRule(expressionEngine);
         var maxiMin = new MaxiMinRule(expressionEngine);
@@ -40,12 +39,12 @@ export class ObjectiveRulesManager{
         this.currentRule = this.ruleByName[ruleName];
     }
 
-    recompute(allRules, decisionPolicy=null){
+    recompute(dataModel, allRules, decisionPolicy=null){
 
         var startTime = new Date().getTime();
         log.trace('recomputing rules, all: '+allRules);
 
-        this.data.getRoots().forEach(n=>{
+        dataModel.getRoots().forEach(n=>{
             this.recomputeTree(n, allRules, decisionPolicy);
         });
 
