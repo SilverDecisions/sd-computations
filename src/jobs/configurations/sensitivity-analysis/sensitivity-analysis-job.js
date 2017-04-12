@@ -4,6 +4,8 @@ import {PrepareVariablesStep} from "./steps/prepare-variables-step";
 import {InitPoliciesStep} from "./steps/init-policies-step";
 import {CalculateStep} from "./steps/calculate-step";
 import {Policy} from "../../../policies/policy";
+import {Utils} from "sd-utils";
+import {ExpressionEngine} from "sd-expression-engine";
 
 
 export class SensitivityAnalysisJob extends SimpleJob {
@@ -45,6 +47,10 @@ export class SensitivityAnalysisJob extends SimpleJob {
             result.push(headers);
         }
 
+        var roundVariables = !!jobParameters.values.roundVariables;
+        if(roundVariables){
+            this.roundVariables(jobResult);
+        }
 
         jobResult.rows.forEach(row => {
             var policy = jobResult.policies[row.policyIndex];
@@ -52,9 +58,58 @@ export class SensitivityAnalysisJob extends SimpleJob {
             row.variables.forEach(v=> rowCells.push(v));
             rowCells.push(row.payoff);
             result.push(rowCells);
+
+            if(row._variables){ //revert original variables
+                row.variables = row._variables;
+                delete row._variables;
+            }
         });
 
         return result;
+    }
+
+    roundVariables(jobResult){
+        var uniqueValues = jobResult.variableNames.map(()=>new Set());
+
+        jobResult.rows.forEach(row => {
+            row._variables = row.variables.slice(); // save original row variables
+            row.variables.forEach((v,i)=> {
+                uniqueValues[i].add(v)
+            });
+        });
+
+        var uniqueValuesNo = uniqueValues.map((s)=>s.size);
+        var maxPrecision = 14;
+        var precision = 2;
+        var notReadyVariablesIndexes = jobResult.variableNames.map((v,i)=>i);
+        while(precision<=maxPrecision && notReadyVariablesIndexes.length){
+            uniqueValues = notReadyVariablesIndexes.map(()=>new Set());
+            jobResult.rows.forEach(row => {
+                notReadyVariablesIndexes.forEach((variableIndex, notReadyIndex)=>{
+
+                    var val = row._variables[variableIndex];
+                    val = Utils.round(val, precision);
+                    uniqueValues[notReadyIndex].add(val);
+
+                    row.variables[variableIndex] = val;
+                })
+            });
+
+            var newReadyIndexes = [];
+            uniqueValues.forEach((uniqueVals, notReadyIndex)=>{
+                var origUniqueCount = uniqueValuesNo[notReadyVariablesIndexes[notReadyIndex]] ;
+                if(origUniqueCount==uniqueVals.size){ //ready in previous iteration
+                    newReadyIndexes.push(notReadyIndex);
+                }
+            });
+            if(newReadyIndexes.length) { //revert values to prev iteration
+                newReadyIndexes.reverse();
+                newReadyIndexes.forEach(notReadyIndex=>{
+                    notReadyVariablesIndexes.splice(notReadyIndex, 1);
+                })
+            }
+            precision++;
+        }
     }
 
     /*Should return progress object with fields:

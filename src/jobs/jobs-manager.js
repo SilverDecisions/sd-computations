@@ -18,6 +18,7 @@ export class JobsManagerConfig {
 
     workerUrl = null;
     repositoryType = 'idb';
+    clearRepository = false;
 
     constructor(custom) {
         if (custom) {
@@ -71,7 +72,7 @@ export class JobsManager extends JobExecutionListener {
 
     initRepository() {
         if(this.config.repositoryType === 'idb'){
-            this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver());
+            this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver(), 'sd-job-repository', this.config.clearRepository);
         }else if('timeout'){
             this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
         }else if('simple'){

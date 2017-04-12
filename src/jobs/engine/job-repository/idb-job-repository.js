@@ -6,6 +6,7 @@ import {JobInstance} from "../job-instance";
 import {StepExecution} from "../step-execution";
 import {ExecutionContext} from "../execution-context";
 import {DataModel} from "sd-model";
+import {log} from "sd-utils";
 
 /* IndexedDB job repository*/
 export class IdbJobRepository extends JobRepository {
@@ -18,55 +19,56 @@ export class IdbJobRepository extends JobRepository {
     jobExecutionProgressDao;
     jobExecutionFlagDao;
 
-    constructor(expressionsReviver, dbName ='sd-job-repository', deleteDB=false) {
+    constructor(expressionsReviver, dbName = 'sd-job-repository', deleteDB = false) {
         super();
-        this.dbName=dbName;
+        this.dbName = dbName;
         this.expressionsReviver = expressionsReviver;
-        if(deleteDB){
-            this.deleteDB().then(()=>{
+        if (deleteDB) {
+            this.deleteDB().then(()=> {
                 this.initDB()
+            }).catch(e=> {
+                log.error(e);
+                this.initDB();
             })
-        }else{
+        } else {
             this.initDB()
         }
+    }
 
+    initDB() {
+        this.dbPromise = idb.open(this.dbName, 1, upgradeDB => {
+            upgradeDB.createObjectStore('job-instances');
+            var jobExecutionsOS = upgradeDB.createObjectStore('job-executions');
+            jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", {unique: false});
+            jobExecutionsOS.createIndex("createTime", "createTime", {unique: false});
+            jobExecutionsOS.createIndex("status", "status", {unique: false});
+            upgradeDB.createObjectStore('job-execution-progress');
+            upgradeDB.createObjectStore('job-execution-flags');
+            var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
+            stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", {unique: false});
+
+            var jobResultOS = upgradeDB.createObjectStore('job-results');
+            jobResultOS.createIndex("jobInstanceId", "jobInstance.id", {unique: true});
+        });
 
         this.jobInstanceDao = new ObjectStoreDao('job-instances', this.dbPromise);
         this.jobExecutionDao = new ObjectStoreDao('job-executions', this.dbPromise);
         this.jobExecutionProgressDao = new ObjectStoreDao('job-execution-progress', this.dbPromise);
         this.jobExecutionFlagDao = new ObjectStoreDao('job-execution-flags', this.dbPromise);
-
         this.stepExecutionDao = new ObjectStoreDao('step-executions', this.dbPromise);
         this.jobResultDao = new ObjectStoreDao('job-results', this.dbPromise);
     }
 
-    initDB(){
-        this.dbPromise = idb.open(this.dbName, 1, upgradeDB => {
-            upgradeDB.createObjectStore('job-instances');
-            var jobExecutionsOS = upgradeDB.createObjectStore('job-executions');
-            jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", { unique: false });
-            jobExecutionsOS.createIndex("createTime", "createTime", { unique: false });
-            jobExecutionsOS.createIndex("status", "status", { unique: false });
-            upgradeDB.createObjectStore('job-execution-progress');
-            upgradeDB.createObjectStore('job-execution-flags');
-            var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
-            stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", { unique: false });
-
-            var jobResultOS = upgradeDB.createObjectStore('job-results');
-            jobResultOS.createIndex("jobInstanceId", "jobInstance.id", { unique: true });
-        });
-    }
-
-    deleteDB(){
+    deleteDB() {
         return Promise.resolve().then(_=>idb.delete(this.dbName));
     }
 
 
-    getJobResult(jobResultId){
+    getJobResult(jobResultId) {
         return this.jobResultDao.get(jobResultId);
     }
 
-    getJobResultByInstance(jobInstance){
+    getJobResultByInstance(jobInstance) {
         return this.jobResultDao.getByIndex("jobInstanceId", jobInstance.id);
     }
 
@@ -77,7 +79,7 @@ export class IdbJobRepository extends JobRepository {
     /*returns promise*/
     getJobInstance(jobName, jobParameters) {
         var key = this.generateJobInstanceKey(jobName, jobParameters);
-        return this.jobInstanceDao.get(key).then(dto=>dto ? this.reviveJobInstance(dto): dto);
+        return this.jobInstanceDao.get(key).then(dto=>dto ? this.reviveJobInstance(dto) : dto);
     }
 
     /*should return promise that resolves to saved instance*/
@@ -90,23 +92,23 @@ export class IdbJobRepository extends JobRepository {
     saveJobExecution(jobExecution) {
         var dto = jobExecution.getDTO();
         var stepExecutionsDTOs = dto.stepExecutions;
-        dto.stepExecutions=null;
+        dto.stepExecutions = null;
         return this.jobExecutionDao.set(jobExecution.id, dto).then(r=>this.saveStepExecutionsDTOS(stepExecutionsDTOs)).then(r=>jobExecution);
     }
 
-    updateJobExecutionProgress(jobExecutionId, progress){
+    updateJobExecutionProgress(jobExecutionId, progress) {
         return this.jobExecutionProgressDao.set(jobExecutionId, progress)
     }
 
-    getJobExecutionProgress(jobExecutionId){
+    getJobExecutionProgress(jobExecutionId) {
         return this.jobExecutionProgressDao.get(jobExecutionId)
     }
 
-    saveJobExecutionFlag(jobExecutionId, flag){
+    saveJobExecutionFlag(jobExecutionId, flag) {
         return this.jobExecutionFlagDao.set(jobExecutionId, flag)
     }
 
-    getJobExecutionFlag(jobExecutionId){
+    getJobExecutionFlag(jobExecutionId) {
         return this.jobExecutionFlagDao.get(jobExecutionId)
     }
 
@@ -116,50 +118,50 @@ export class IdbJobRepository extends JobRepository {
         return this.stepExecutionDao.set(stepExecution.id, dto).then(r=>stepExecution);
     }
 
-    saveStepExecutionsDTOS(stepExecutions, savedExecutions=[]) {
-        if(stepExecutions.length<=savedExecutions.length){
+    saveStepExecutionsDTOS(stepExecutions, savedExecutions = []) {
+        if (stepExecutions.length <= savedExecutions.length) {
             return Promise.resolve(savedExecutions);
         }
         var stepExecutionDTO = stepExecutions[savedExecutions.length];
-        return this.stepExecutionDao.set(stepExecutionDTO.id, stepExecutionDTO).then(()=>{
+        return this.stepExecutionDao.set(stepExecutionDTO.id, stepExecutionDTO).then(()=> {
             savedExecutions.push(stepExecutionDTO);
             return this.saveStepExecutionsDTOS(stepExecutions, savedExecutions);
         });
     }
 
-    getJobExecutionById(id){
-        return this.jobExecutionDao.get(id).then(dto=>{
+    getJobExecutionById(id) {
+        return this.jobExecutionDao.get(id).then(dto=> {
             return this.fetchJobExecutionRelations(dto);
         });
     }
 
-    fetchJobExecutionRelations(jobExecutionDTO, revive=true){
-        if(!jobExecutionDTO){
+    fetchJobExecutionRelations(jobExecutionDTO, revive = true) {
+        if (!jobExecutionDTO) {
             return Promise.resolve(null)
         }
-        return this.findStepExecutions(jobExecutionDTO.id, false).then(steps=>{
+        return this.findStepExecutions(jobExecutionDTO.id, false).then(steps=> {
             jobExecutionDTO.stepExecutions = steps;
-            if(!revive){
+            if (!revive) {
                 return jobExecutionDTO;
             }
             return this.reviveJobExecution(jobExecutionDTO);
         })
     }
 
-    fetchJobExecutionsRelations(jobExecutionDtoList, revive=true, fetched=[]){
-        if(jobExecutionDtoList.length<=fetched.length){
+    fetchJobExecutionsRelations(jobExecutionDtoList, revive = true, fetched = []) {
+        if (jobExecutionDtoList.length <= fetched.length) {
             return Promise.resolve(fetched);
         }
-        return this.fetchJobExecutionRelations(jobExecutionDtoList[fetched.length], revive).then((jobExecution)=>{
+        return this.fetchJobExecutionRelations(jobExecutionDtoList[fetched.length], revive).then((jobExecution)=> {
             fetched.push(jobExecution);
 
             return this.fetchJobExecutionsRelations(jobExecutionDtoList, revive, fetched);
         });
     }
 
-    findStepExecutions(jobExecutionId, revive=true){
-        return this.stepExecutionDao.getAllByIndex("jobExecutionId", jobExecutionId).then(dtos=>{
-            if(!revive){
+    findStepExecutions(jobExecutionId, revive = true) {
+        return this.stepExecutionDao.getAllByIndex("jobExecutionId", jobExecutionId).then(dtos=> {
+            if (!revive) {
                 return dtos;
             }
             return dtos.map(dto=>this.reviveStepExecution(dto));
@@ -168,13 +170,13 @@ export class IdbJobRepository extends JobRepository {
 
 
     /*find job executions sorted by createTime, returns promise*/
-    findJobExecutions(jobInstance, fetchRelationsAndRevive=true) {
+    findJobExecutions(jobInstance, fetchRelationsAndRevive = true) {
         return this.jobExecutionDao.getAllByIndex("jobInstanceId", jobInstance.id).then(values=> {
-            var sorted =  values.sort(function (a, b) {
+            var sorted = values.sort(function (a, b) {
                 return a.createTime.getTime() - b.createTime.getTime()
             });
 
-            if(!fetchRelationsAndRevive) {
+            if (!fetchRelationsAndRevive) {
                 return sorted;
             }
 
@@ -182,16 +184,16 @@ export class IdbJobRepository extends JobRepository {
         });
     }
 
-    getLastJobExecutionByInstance(jobInstance){
-        return this.findJobExecutions(jobInstance, false).then(executions=>this.fetchJobExecutionRelations(executions[executions.length -1]));
+    getLastJobExecutionByInstance(jobInstance) {
+        return this.findJobExecutions(jobInstance, false).then(executions=>this.fetchJobExecutionRelations(executions[executions.length - 1]));
     }
 
     getLastStepExecution(jobInstance, stepName) {
-        return this.findJobExecutions(jobInstance).then(jobExecutions=>{
-            var stepExecutions=[];
+        return this.findJobExecutions(jobInstance).then(jobExecutions=> {
+            var stepExecutions = [];
             jobExecutions.forEach(jobExecution=>jobExecution.stepExecutions.filter(s=>s.stepName === stepName).forEach((s)=>stepExecutions.push(s)));
             var latest = null;
-            stepExecutions.forEach(s=>{
+            stepExecutions.forEach(s=> {
                 if (latest == null || latest.startTime.getTime() < s.startTime.getTime()) {
                     latest = s;
                 }
@@ -208,7 +210,7 @@ export class IdbJobRepository extends JobRepository {
         var executionContext = new ExecutionContext();
         executionContext.context = dto.context;
         var data = executionContext.getData();
-        if(data){
+        if (data) {
             var dataModel = new DataModel();
             dataModel.loadFromDTO(data, this.expressionsReviver);
             executionContext.setData(dataModel);
@@ -275,14 +277,14 @@ class ObjectStoreDao {
         });
     }
 
-    getAllByIndex(indexName, key){
+    getAllByIndex(indexName, key) {
         return this.dbPromise.then(db => {
             return db.transaction(this.name)
                 .objectStore(this.name).index(indexName).getAll(key)
         });
     }
 
-    getByIndex(indexName, key){
+    getByIndex(indexName, key) {
         return this.dbPromise.then(db => {
             return db.transaction(this.name)
                 .objectStore(this.name).index(indexName).get(key)

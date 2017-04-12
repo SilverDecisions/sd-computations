@@ -19,6 +19,7 @@ export class ComputationsManagerConfig {
         url: null
     };
     jobRepositoryType = 'idb';
+    clearRepository = false;
 
     constructor(custom) {
         if (custom) {
@@ -47,7 +48,8 @@ export class ComputationsManager {
         this.operationsManager = new OperationsManager(this.data, this.expressionEngine);
         this.jobsManger = new JobsManager(this.expressionsEvaluator, this.objectiveRulesManager, {
             workerUrl: this.config.worker.url,
-            repositoryType: this.config.jobRepositoryType
+            repositoryType: this.config.jobRepositoryType,
+            clearRepository: this.config.clearRepository
         });
         this.treeValidator = new TreeValidator(this.expressionEngine);
     }
