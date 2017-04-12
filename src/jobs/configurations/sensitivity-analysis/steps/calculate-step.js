@@ -3,6 +3,7 @@ import {ExpressionEngine} from "sd-expression-engine";
 import {BatchStep} from "../../../engine/batch/batch-step";
 import {TreeValidator} from "../../../../validation/tree-validator";
 import {Policy} from "../../../../policies/policy";
+import {JobComputationException} from "../../../engine/exceptions/job-computation-exception";
 
 export class CalculateStep extends BatchStep {
 
@@ -38,9 +39,11 @@ export class CalculateStep extends BatchStep {
         return variableValues.slice(startIndex, startIndex + chunkSize);
     }
 
+
     processItem(stepExecution, item) {
         var params = stepExecution.getJobParameters();
         var ruleName = params.value("ruleName");
+        var failOnInvalidTree = params.value("failOnInvalidTree");
         var data = stepExecution.getData();
         var treeRoot = data.getRoots()[0];
         var variableNames = stepExecution.executionContext.get("variableNames");
@@ -51,10 +54,22 @@ export class CalculateStep extends BatchStep {
         variableNames.forEach((variableName, i)=> {
             data.expressionScope[variableName] = item[i];
         });
+
         this.expressionsEvaluator.evalExpressionsForNode(data, treeRoot);
         var vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
 
         var valid = vr.isValid();
+
+        if(!valid && failOnInvalidTree){
+            let errorData = {
+                variables: {}
+            };
+            variableNames.forEach((variableName, i)=> {
+                errorData.variables[variableName] = item[i];
+            });
+            throw new JobComputationException("computations", errorData)
+        }
+
         var payoffs = [];
 
         policies.forEach(policy=> {

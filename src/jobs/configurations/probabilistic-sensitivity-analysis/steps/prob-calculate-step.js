@@ -4,6 +4,7 @@ import {BatchStep} from "../../../engine/batch/batch-step";
 import {TreeValidator} from "../../../../validation/tree-validator";
 import {Policy} from "../../../../policies/policy";
 import {CalculateStep} from "../../sensitivity-analysis/steps/calculate-step";
+import {JobComputationException} from "../../../engine/exceptions/job-computation-exception";
 
 export class ProbCalculateStep extends CalculateStep {
 
@@ -34,10 +35,26 @@ export class ProbCalculateStep extends CalculateStep {
         var variableValues = [];
         for(var runIndex=0; runIndex<chunkSize; runIndex++){
             var singleRunVariableValues = [];
+            var errors = [];
             variables.forEach(v=> {
-                var evaluated = this.expressionsEvaluator.expressionEngine.eval(v.formula, true, Utils.cloneDeep(data.expressionScope));
-                singleRunVariableValues.push(ExpressionEngine.toFloat(evaluated));
+                try{
+                    var evaluated = this.expressionsEvaluator.expressionEngine.eval(v.formula, true, Utils.cloneDeep(data.expressionScope));
+                    singleRunVariableValues.push(ExpressionEngine.toFloat(evaluated));
+                }catch(e){
+                    errors.push({
+                        variable: v,
+                        error: e
+                    });
+                }
+
             });
+            if(errors.length) {
+                var errorData = {variables: []};
+                errors.forEach(e=>{
+                    errorData.variables[e.variable.name] = e.error.message;
+                });
+                throw new JobComputationException("param-computation", errorData)
+            }
             variableValues.push(singleRunVariableValues)
         }
 

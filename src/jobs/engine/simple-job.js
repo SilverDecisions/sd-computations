@@ -28,6 +28,7 @@ export class SimpleJob extends Job {
                 log.debug("Updating JobExecution status: ", lastExecutedStepExecution);
                 execution.status = lastExecutedStepExecution.status;
                 execution.exitStatus = lastExecutedStepExecution.exitStatus;
+                execution.failureExceptions.push(...lastExecutedStepExecution.failureExceptions)
             }
             return execution;
         });

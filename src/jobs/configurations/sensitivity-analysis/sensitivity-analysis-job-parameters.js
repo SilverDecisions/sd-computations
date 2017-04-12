@@ -7,6 +7,7 @@ export class SensitivityAnalysisJobParameters extends JobParameters {
         this.definitions.push(new JobParameterDefinition("id", PARAMETER_TYPE.STRING, 1, 1, true));
         this.definitions.push(new JobParameterDefinition("ruleName", PARAMETER_TYPE.STRING));
         this.definitions.push(new JobParameterDefinition("extendedPolicyDescription", PARAMETER_TYPE.BOOLEAN));
+        this.definitions.push(new JobParameterDefinition("failOnInvalidTree", PARAMETER_TYPE.BOOLEAN));
         this.definitions.push(new JobParameterDefinition("variables", [
                 new JobParameterDefinition("name", PARAMETER_TYPE.STRING),
                 new JobParameterDefinition("min", PARAMETER_TYPE.NUMBER),
@@ -21,7 +22,8 @@ export class SensitivityAnalysisJobParameters extends JobParameters {
     initDefaultValues() {
         this.values = {
             id: Utils.guid(),
-            extendedPolicyDescription: true
+            extendedPolicyDescription: true,
+            failOnInvalidTree: true
         }
     }
 }
