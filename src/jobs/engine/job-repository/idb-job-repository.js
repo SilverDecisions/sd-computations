@@ -36,19 +36,27 @@ export class IdbJobRepository extends JobRepository {
     }
 
     initDB() {
-        this.dbPromise = idb.open(this.dbName, 1, upgradeDB => {
-            upgradeDB.createObjectStore('job-instances');
-            var jobExecutionsOS = upgradeDB.createObjectStore('job-executions');
-            jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", {unique: false});
-            jobExecutionsOS.createIndex("createTime", "createTime", {unique: false});
-            jobExecutionsOS.createIndex("status", "status", {unique: false});
-            upgradeDB.createObjectStore('job-execution-progress');
-            upgradeDB.createObjectStore('job-execution-flags');
-            var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
-            stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", {unique: false});
+        this.dbPromise = idb.open(this.dbName, 2, upgradeDB => {
+            // Note: we don't use 'break' in this switch statement,
+            // the fall-through behaviour is what we want.
+            switch (upgradeDB.oldVersion) {
+                case 0:
+                    upgradeDB.createObjectStore('job-instances');
+                    var jobExecutionsOS = upgradeDB.createObjectStore('job-executions');
+                    jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", {unique: false});
+                    jobExecutionsOS.createIndex("createTime", "createTime", {unique: false});
+                    jobExecutionsOS.createIndex("status", "status", {unique: false});
+                    upgradeDB.createObjectStore('job-execution-progress');
+                    upgradeDB.createObjectStore('job-execution-flags');
+                    var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
+                    stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", {unique: false});
 
-            var jobResultOS = upgradeDB.createObjectStore('job-results');
-            jobResultOS.createIndex("jobInstanceId", "jobInstance.id", {unique: true});
+                    var jobResultOS = upgradeDB.createObjectStore('job-results');
+                    jobResultOS.createIndex("jobInstanceId", "jobInstance.id", {unique: true});
+                case 1:
+                    upgradeDB.transaction.objectStore('job-instances').createIndex("id", "id", {unique: true});
+            }
+
         });
 
         this.jobInstanceDao = new ObjectStoreDao('job-instances', this.dbPromise);
@@ -62,6 +70,38 @@ export class IdbJobRepository extends JobRepository {
     deleteDB() {
         return Promise.resolve().then(_=>idb.delete(this.dbName));
     }
+
+
+    removeJobInstance(jobInstance, jobParameters){
+        var key = this.generateJobInstanceKey(jobInstance.jobName, jobParameters);
+        return this.jobInstanceDao.remove(key).then(()=>{
+            this.findJobExecutions(jobInstance, false).then(jobExecutions=>{  //  Not waiting for promise resolves
+                jobExecutions.forEach(this.removeJobExecution, this);
+            });
+
+            this.getJobResultByInstance(jobInstance).then(jobResult=>{
+                return this.removeJobResult(jobResult)
+            })
+        });
+    }
+
+    removeJobExecution(jobExecution){
+        return this.jobExecutionDao.remove(jobExecution.id).then(()=>{
+            return this.findStepExecutions(jobExecution.id, false).then(stepExecutions=>{  // Not waiting for promise resolves
+                stepExecutions.forEach(this.removeStepExecution, this);
+            });
+        });
+    }
+
+    removeStepExecution(stepExecution){
+        return this.stepExecutionDao.remove(stepExecution.id)
+    }
+
+    removeJobResult(jobResult){
+        return this.jobResultDao.remove(jobResult.id);
+    }
+
+
 
 
     getJobResult(jobResultId) {

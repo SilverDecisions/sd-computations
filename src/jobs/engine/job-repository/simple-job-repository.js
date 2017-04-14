@@ -9,6 +9,46 @@ export class SimpleJobRepository extends JobRepository{
     executionFlags = {};
     jobResults = [];
 
+    removeJobInstance(jobInstance){
+        Utils.forOwn(this.jobInstancesByKey,  (ji, key)=>{
+            if(ji===jobInstance){
+                delete this.jobInstancesByKey[key]
+            }
+        });
+
+        this.jobExecutions.filter(jobExecution=>jobExecution.jobInstance.id == jobInstance.id).reverse().forEach(this.removeJobExecution, this);
+        this.jobResults.filter(jobResult=>jobResult.jobInstance.id == jobInstance.id).reverse().forEach(this.removeJobResult, this);
+
+        return Promise.resolve();
+    }
+
+    removeJobExecution(jobExecution){
+        let index = this.jobExecutions.indexOf(jobExecution);
+        if(index>-1) {
+            this.jobExecutions.splice(index, 1)
+        }
+
+        this.stepExecutions.filter(stepExecution=>stepExecution.jobExecution.id === jobExecution.id).reverse().forEach(this.removeStepExecution, this);
+        return Promise.resolve();
+    }
+
+    removeStepExecution(stepExecution){
+        let index = this.stepExecutions.indexOf(stepExecution);
+        if(index>-1) {
+            this.stepExecutions.splice(index, 1)
+        }
+        return Promise.resolve();
+    }
+
+    removeJobResult(jobResult){
+        let index = this.jobResults.indexOf(jobResult);
+        if(index>-1) {
+            this.jobResults.splice(index, 1)
+        }
+        return Promise.resolve();
+    }
+
+
     /*returns promise*/
     getJobInstance(jobName, jobParameters) {
         var key = this.generateJobInstanceKey(jobName, jobParameters);
@@ -75,4 +115,6 @@ export class SimpleJobRepository extends JobRepository{
             return a.createTime.getTime() - b.createTime.getTime()
         }));
     }
+
+
 }

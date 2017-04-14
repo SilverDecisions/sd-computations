@@ -8,6 +8,7 @@ import {JobInstanceAlreadyCompleteException} from "../exceptions/job-instance-al
 import {ExecutionContext} from "../execution-context";
 import {StepExecution} from "../step-execution";
 import {DataModel} from "sd-model";
+import {JobResult} from "../job-result";
 
 export class JobRepository {
 
@@ -78,6 +79,23 @@ export class JobRepository {
 
     saveJobResult(jobResult) {
         throw "JobRepository.setJobResult function not implemented!"
+    }
+
+
+    removeJobInstance(jobInstance, jobParameters){
+        throw "JobRepository.removeJobInstance function not implemented!"
+    }
+
+    removeJobExecution(jobExecution){
+        throw "JobRepository.removeJobExecution function not implemented!"
+    }
+
+    removeStepExecution(stepExecution){
+        throw "JobRepository.removeStepExecution function not implemented!"
+    }
+
+    removeJobResult(jobResult){
+        throw "JobRepository.removeJobResult function not implemented!"
     }
 
     /*Create a new JobInstance with the name and job parameters provided. return promise*/
@@ -183,17 +201,22 @@ export class JobRepository {
         throw "Object not updatable: "+o
     }
 
+    remove(o){
 
-    remove(o){ //TODO
-        // if(o instanceof JobExecution){
-        //     return this.removeJobExecution(o);
-        // }
-        //
-        // if(o instanceof StepExecution){
-        //     return this.removeStepExecution(o);
-        // }
+        if(o instanceof JobExecution){
+            return this.removeJobExecution(o);
+        }
+
+        if(o instanceof StepExecution){
+            return this.removeStepExecution(o);
+        }
+
+        if(o instanceof JobResult){
+            return this.removeJobResult();
+        }
+
+        return Promise.reject("Object not removable: "+o);
     }
-
 
 
     reviveJobInstance(dto) {

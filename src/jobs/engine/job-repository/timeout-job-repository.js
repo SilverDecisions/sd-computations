@@ -1,16 +1,11 @@
 import {JobRepository} from "./job-repository";
 import {Utils} from "sd-utils";
+import {SimpleJobRepository} from "./simple-job-repository";
 
 
 
-export class TimeoutJobRepository extends JobRepository{
-    jobInstancesByKey = {};
-    jobExecutions = [];
-    stepExecutions = [];
-    executionProgress = {};
-    executionFlags = {};
-    jobResults=[];
-    
+export class TimeoutJobRepository extends SimpleJobRepository{
+
     createTimeoutPromise(valueToResolve, delay=1){
         return new Promise(resolve=>{
             setTimeout(function(){

@@ -140,10 +140,13 @@ export class JobsManager extends JobExecutionListener {
 
     /*stop job execution if running and delete job instance from repository*/
     terminate(jobInstance) {
-
         return this.jobRepository.getLastJobExecutionByInstance(jobInstance).then(jobExecution=> {
-            if (jobExecution && jobExecution.isRunning()) {
-                return this.jobRepository.saveJobExecutionFlag(jobExecution.id, JOB_EXECUTION_FLAG.STOP).then(()=>jobExecution);
+            if (jobExecution) {
+                if(jobExecution.isRunning()){
+                    return this.jobRepository.saveJobExecutionFlag(jobExecution.id, JOB_EXECUTION_FLAG.STOP).then(()=>jobExecution);
+                }else{
+                    return this.jobRepository.removeJobInstance(jobInstance, jobExecution.jobParameters);
+                }
             }
         }).then(()=>{
             this.jobInstancesToTerminate[jobInstance.id]=jobInstance;
@@ -230,7 +233,7 @@ export class JobsManager extends JobExecutionListener {
         }
 
         if(this.jobInstancesToTerminate[jobExecution.jobInstance.id]){
-            this.jobRepository.remove(jobExecution.jobInstance);
+            this.jobRepository.removeJobInstance(jobExecution.jobInstance, jobExecution.jobParameters);
         }
     }
 
