@@ -19,7 +19,7 @@ export class ExpectedValueMaximizationRule extends ObjectiveRule{
         }
 
         node.childEdges.forEach(e=>{
-            if ( this.subtract(this.cValue(node,'payoff'),payoff).equals(this.cValue(e.childNode, 'payoff')) || !(node instanceof model.DecisionNode) ) {
+            if ( this.subtract(this.computedPayoff(node),payoff).equals(this.computedPayoff(e.childNode)) || !(node instanceof model.DecisionNode) ) {
                 this.cValue(e, 'optimal', true);
                 this.computeOptimal(e.childNode, this.basePayoff(e), this.multiply(probabilityToEnter, this.cValue(e,'probability')));
             }else{

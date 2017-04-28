@@ -1,34 +1,54 @@
-import {ExpectedValueMaximizationRule, ExpectedValueMinimizationRule, MaxiMinRule, MaxiMaxRule, MiniMinRule, MiniMaxRule} from "./rules";
-import {log} from "sd-utils"
+import {
+    ExpectedValueMaximizationRule,
+    ExpectedValueMinimizationRule,
+    MaxiMinRule,
+    MaxiMaxRule,
+    MiniMinRule,
+    MiniMaxRule
+} from "./rules";
+import {log} from "sd-utils";
 import * as model from "sd-model";
+import {MinMaxRule} from "./rules/min-max-rule";
+import {MaxMinRule} from "./rules/max-min-rule";
 
 export class ObjectiveRulesManager{
 
     expressionEngine;
     currentRule;
-    ruleByName={};
+    ruleByName = {};
+    rules = [];
 
-    constructor(expressionEngine, currentRuleName){
-        this.expressionEngine=expressionEngine;
-        var max = new ExpectedValueMaximizationRule(expressionEngine);
-        var maxiMin = new MaxiMinRule(expressionEngine);
-        var maxiMax = new MaxiMaxRule(expressionEngine);
-        var min = new ExpectedValueMinimizationRule(expressionEngine);
-        var miniMin = new MiniMinRule(expressionEngine);
-        var miniMax = new MiniMaxRule(expressionEngine);
-        this.ruleByName[max.name]=max;
-        this.ruleByName[maxiMin.name]=maxiMin;
-        this.ruleByName[maxiMax.name]=maxiMax;
-        this.ruleByName[min.name]=min;
-        this.ruleByName[miniMin.name]=miniMin;
-        this.ruleByName[miniMax.name]=miniMax;
-        this.rules = [max, min, maxiMin, maxiMax, miniMin, miniMax];
-        if(currentRuleName){
+    flipPair = {};
+
+    constructor(expressionEngine, currentRuleName) {
+        this.expressionEngine = expressionEngine;
+        this.addRule(new ExpectedValueMaximizationRule(expressionEngine));
+        this.addRule(new ExpectedValueMinimizationRule(expressionEngine));
+        this.addRule(new MaxiMinRule(expressionEngine));
+        this.addRule(new MaxiMaxRule(expressionEngine));
+        this.addRule(new MiniMinRule(expressionEngine));
+        this.addRule(new MiniMaxRule(expressionEngine));
+
+        let minMax = new MinMaxRule(expressionEngine);
+        this.addRule(minMax);
+        let maxMin = new MaxMinRule(expressionEngine);
+        this.addRule(maxMin);
+
+        this.addFlipPair(minMax, maxMin);
+
+
+
+        if (currentRuleName) {
             this.currentRule = this.ruleByName[currentRuleName];
-        }else{
+        } else {
             this.currentRule = this.rules[0];
         }
 
+    }
+
+    addRule(rule){
+        this.ruleByName[rule.name]=rule;
+        this.rules.push(rule);
     }
 
     isRuleName(ruleName){
@@ -37,6 +57,17 @@ export class ObjectiveRulesManager{
 
     setCurrentRuleByName(ruleName){
         this.currentRule = this.ruleByName[ruleName];
+    }
+
+    flipRule(){
+        var flipped = this.flipPair[this.currentRule.name];
+        if(flipped){
+            this.currentRule = flipped;
+        }
+    }
+
+    updateDefaultWTP(defaultWTP){
+        this.rules.filter(r=>r.multiCriteria).forEach(r=>r.setDefaultWTP(parseFloat(defaultWTP)));
     }
 
     recompute(dataModel, allRules, decisionPolicy=null){
@@ -94,10 +125,15 @@ export class ObjectiveRulesManager{
             return null;
         }
         if(name==='payoff'){
-            return e.computedBasePayoff();
+            return e.computedValue(null, 'payoff');
         }
         if(name==='optimal'){
             return e.computedValue(this.currentRule.name, 'optimal')
         }
+    }
+
+    addFlipPair(rule1, rule2) {
+        this.flipPair[rule1.name] = rule2;
+        this.flipPair[rule2.name] = rule1;
     }
 }

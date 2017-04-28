@@ -75,13 +75,18 @@ export class ExpressionsEvaluator {
             var invalidProb = false;
 
             node.childEdges.forEach(e=>{
-                if(e.isFieldValid('payoff', true, false)){
-                    try{
-                        e.computedValue(null, 'payoff', this.expressionEngine.evalPayoff(e))
-                    }catch (err){
-                        //   Left empty intentionally
+                e.payoff.forEach((rawPayoff, payoffIndex)=> {
+                    let path = 'payoff[' + payoffIndex + ']';
+                    if(e.isFieldValid(path, true, false)){
+                        try{
+                            e.computedValue(null, path, this.expressionEngine.evalPayoff(e, payoffIndex))
+                        }catch (err){
+                            //   Left empty intentionally
+                        }
                     }
-                }
+                });
+
+
 
                 if(node instanceof model.ChanceNode){
                     if(ExpressionEngine.isHash(e.probability)){

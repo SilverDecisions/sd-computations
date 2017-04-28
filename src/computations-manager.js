@@ -63,6 +63,13 @@ export class ComputationsManager {
         return this.objectiveRulesManager.currentRule;
     }
 
+    flipCriteria(data){
+        data = data || this.data;
+        data.reversePayoffs();
+        this.objectiveRulesManager.flipRule();
+        return this.checkValidityAndRecomputeObjective(false);
+    }
+
     getJobByName(jobName) {
         return this.jobsManger.getJobByName(jobName);
     }
@@ -118,6 +125,7 @@ export class ComputationsManager {
     }
 
     _checkValidityAndRecomputeObjective(data, allRules, evalCode = false, evalNumeric = true) {
+        this.objectiveRulesManager.updateDefaultWTP(data.defaultWTP);
         data.validationResults = [];
 
         if (evalCode || evalNumeric) {

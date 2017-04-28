@@ -1,6 +1,5 @@
-import {Utils} from 'sd-utils'
-import {domain as model, ValidationResult} from 'sd-model'
-import {ExpressionEngine} from 'sd-expression-engine'
+import {domain as model, ValidationResult} from "sd-model";
+import {ExpressionEngine} from "sd-expression-engine";
 import {ProbabilityValueValidator} from "./probability-value-validator";
 import {PayoffValueValidator} from "./payoff-value-validator";
 
@@ -38,12 +37,11 @@ export class TreeValidator {
         var withHash = false;
         node.childEdges.forEach((e, i)=> {
             e.setValueValidity('probability', true);
-            e.setValueValidity('payoff', true);
 
             if (node instanceof model.ChanceNode) {
                 var probability = e.computedBaseProbability();
                 if (!this.probabilityValueValidator.validate(probability)) {
-                    if(!ExpressionEngine.isHash(e.probability)){
+                    if (!ExpressionEngine.isHash(e.probability)) {
                         validationResult.addError({name: 'invalidProbability', data: {'number': i + 1}}, node);
                         e.setValueValidity('probability', false);
                     }
@@ -52,12 +50,16 @@ export class TreeValidator {
                     probabilitySum = ExpressionEngine.add(probabilitySum, probability);
                 }
             }
-            var payoff = e.computedBasePayoff();
-            if (!this.payoffValueValidator.validate(payoff)) {
-                validationResult.addError({name: 'invalidPayoff', data: {'number': i + 1}}, node);
-                // console.log('invalidPayoff', e);
-                e.setValueValidity('payoff', false);
-            }
+
+            e.payoff.forEach((rawPayoff, payoffIndex)=> {
+                var path = 'payoff[' + payoffIndex + ']';
+                e.setValueValidity(path, true);
+                var payoff = e.computedBasePayoff(undefined, payoffIndex);
+                if (!this.payoffValueValidator.validate(payoff)) {
+                    validationResult.addError({name: 'invalidPayoff', data: {'number': i + 1}}, node);
+                    e.setValueValidity(path, false);
+                }
+            })
 
 
         });

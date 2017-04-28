@@ -14,7 +14,7 @@ export class MaxiMinRule extends ObjectiveRule{
     modifyChanceProbability(edges, bestChildPayoff, bestCount, worstChildPayoff, worstCount){
         edges.forEach(e=>{
             this.clearComputedValues(e);
-            this.cValue(e, 'probability', this.cValue(e.childNode, 'payoff')>worstChildPayoff ? 0.0 : (1.0/worstCount));
+            this.cValue(e, 'probability', this.computedPayoff(e.childNode)>worstChildPayoff ? 0.0 : (1.0/worstCount));
         });
     }
 
@@ -27,14 +27,14 @@ export class MaxiMinRule extends ObjectiveRule{
 
         var optimalEdge = null;
         if (node instanceof model.ChanceNode) {
-            optimalEdge = Utils.minBy(node.childEdges, e=>this.cValue(e.childNode, 'payoff'));
+            optimalEdge = Utils.minBy(node.childEdges, e=>this.computedPayoff(e.childNode));
         }
 
         node.childEdges.forEach(e=> {
             var isOptimal = false;
             if (optimalEdge) {
-                isOptimal = this.cValue(optimalEdge.childNode, 'payoff').equals(this.cValue(e.childNode, 'payoff'));
-            } else isOptimal = !!(this.subtract(this.cValue(node, 'payoff'), payoff).equals(this.cValue(e.childNode, 'payoff')) || !(node instanceof model.DecisionNode));
+                isOptimal = this.computedPayoff(optimalEdge.childNode).equals(this.computedPayoff(e.childNode));
+            } else isOptimal = !!(this.subtract(this.computedPayoff(node), payoff).equals(this.computedPayoff(e.childNode)) || !(node instanceof model.DecisionNode));
 
             if (isOptimal) {
                 this.cValue(e, 'optimal', true);

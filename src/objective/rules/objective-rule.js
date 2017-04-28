@@ -1,52 +1,58 @@
-import {ExpressionEngine} from 'sd-expression-engine'
-import {domain as model} from 'sd-model'
-import {Decision} from "../../policies/decision";
+import {ExpressionEngine} from "sd-expression-engine";
+import {domain as model} from "sd-model";
 import {Policy} from "../../policies/policy";
-import {Utils} from "sd-utils";
 
 /*Base class for objective rules*/
-export class ObjectiveRule{
+export class ObjectiveRule {
     name;
     expressionEngine;
 
     decisionPolicy;
     maximization;
 
-    constructor(name, maximization, expressionEngine){
+    payoffIndex = 0;
+    multiCriteria = false;
+
+    constructor(name, maximization, expressionEngine, multiCriteria=false) {
         this.name = name;
         this.maximization = maximization;
         this.expressionEngine = expressionEngine;
+        this.multiCriteria = multiCriteria;
     }
 
-    setDecisionPolicy(decisionPolicy){
+    setDecisionPolicy(decisionPolicy) {
         this.decisionPolicy = decisionPolicy;
     }
 
-    clearDecisionPolicy(){
-        this.decisionPolicy=null;
+    setPayoffIndex(payoffIndex) {
+        this.payoffIndex = payoffIndex;
+    }
+
+    clearDecisionPolicy() {
+        this.decisionPolicy = null;
     }
 
     // should return array of selected children indexes
-    makeDecision(decisionNode, childrenPayoffs){
+    makeDecision(decisionNode, childrenPayoffs) {
         var best;
-        if(this.maximization){
+        if (this.maximization) {
             best = this.max(...childrenPayoffs);
-        }else{
+        } else {
             best = this.min(...childrenPayoffs);
         }
         var selectedIndexes = [];
-        childrenPayoffs.forEach((p, i)=>{
-            if(ExpressionEngine.compare(best, p) == 0){
+        childrenPayoffs.forEach((p, i)=> {
+            if (ExpressionEngine.compare(best, p) == 0) {
                 selectedIndexes.push(i);
             }
         });
         return selectedIndexes;
     }
 
-    _makeDecision(decisionNode, childrenPayoffs){
-        if(this.decisionPolicy){
+    _makeDecision(decisionNode, childrenPayoffs) {
+        if (this.decisionPolicy) {
             var decision = Policy.getDecision(this.decisionPolicy, decisionNode);
-            if(decision){
+            if (decision) {
                 return [decision.decisionValue];
             }
             return [];
@@ -55,40 +61,40 @@ export class ObjectiveRule{
     }
 
     // extension point for changing computed probability of edges in a chance node
-    modifyChanceProbability(edges, bestChildPayoff, bestCount, worstChildPayoff, worstCount){
+    modifyChanceProbability(edges, bestChildPayoff, bestCount, worstChildPayoff, worstCount) {
 
     }
 
     // payoff - parent edge payoff, aggregatedPayoff - aggregated payoff along path
-    computePayoff(node, payoff=0, aggregatedPayoff=0){
+    computePayoff(node, payoff = 0, aggregatedPayoff = 0) {
         var childrenPayoff = 0;
         if (node.childEdges.length) {
-            if(node instanceof model.DecisionNode) {
+            if (node instanceof model.DecisionNode) {
 
                 var selectedIndexes = this._makeDecision(node, node.childEdges.map(e=>this.computePayoff(e.childNode, this.basePayoff(e), this.add(this.basePayoff(e), aggregatedPayoff))));
-                node.childEdges.forEach((e, i)=>{
+                node.childEdges.forEach((e, i)=> {
                     this.clearComputedValues(e);
                     this.cValue(e, 'probability', selectedIndexes.indexOf(i) < 0 ? 0.0 : 1.0);
                 });
 
-            }else{
+            } else {
                 var bestChild = -Infinity;
                 var bestCount = 1;
                 var worstChild = Infinity;
                 var worstCount = 1;
 
-                node.childEdges.forEach(e=>{
+                node.childEdges.forEach(e=> {
                     var childPayoff = this.computePayoff(e.childNode, this.basePayoff(e), this.add(this.basePayoff(e), aggregatedPayoff));
-                    if(childPayoff < worstChild){
+                    if (childPayoff < worstChild) {
                         worstChild = childPayoff;
-                        worstCount=1;
-                    }else if(childPayoff.equals(worstChild)){
+                        worstCount = 1;
+                    } else if (childPayoff.equals(worstChild)) {
                         worstCount++
                     }
-                    if(childPayoff > bestChild){
+                    if (childPayoff > bestChild) {
                         bestChild = childPayoff;
-                        bestCount=1;
-                    }else if(childPayoff.equals(bestChild)){
+                        bestCount = 1;
+                    } else if (childPayoff.equals(bestChild)) {
                         bestCount++
                     }
 
@@ -98,75 +104,86 @@ export class ObjectiveRule{
                 this.modifyChanceProbability(node.childEdges, bestChild, bestCount, worstChild, worstCount);
             }
 
-            var sumweight = 0 ;
-            node.childEdges.forEach(e=>{
-                sumweight=this.add(sumweight, this.cValue(e, 'probability'));
+            var sumweight = 0;
+            node.childEdges.forEach(e=> {
+                sumweight = this.add(sumweight, this.cValue(e, 'probability'));
             });
 
             // console.log(payoff,node.childEdges,'sumweight',sumweight);
-            if(sumweight>0){
-                node.childEdges.forEach(e=>{
-                    childrenPayoff = this.add(childrenPayoff, this.multiply(this.cValue(e, 'probability'),this.cValue(e.childNode, 'payoff')).div(sumweight));
+            if (sumweight > 0) {
+                node.childEdges.forEach(e=> {
+                    childrenPayoff = this.add(childrenPayoff, this.multiply(this.cValue(e, 'probability'), this.computedPayoff(e.childNode)).div(sumweight));
                 });
             }
 
 
         }
 
-        payoff=this.add(payoff, childrenPayoff);
+        payoff = this.add(payoff, childrenPayoff);
         this.clearComputedValues(node);
 
-        if(node instanceof model.TerminalNode){
-            this.cValue(node, 'aggregatedPayoff', aggregatedPayoff);
+        if (node instanceof model.TerminalNode) {
+            this.cValue(node, 'aggregatedPayoff'+ '[' + this.payoffIndex + ']', aggregatedPayoff);
             this.cValue(node, 'probabilityToEnter', 0); //initial value
-        }else{
-            this.cValue(node, 'childrenPayoff', childrenPayoff);
+        } else {
+            this.cValue(node, 'childrenPayoff' + '[' + this.payoffIndex + ']', childrenPayoff);
         }
 
-        return this.cValue(node, 'payoff', payoff);
+        return this.computedPayoff(node, payoff);
     }
 
     // koloruje optymalne ścieżki
-    computeOptimal(node){
-        throw 'computeOptimal function not implemented for rule: '+this.name
+    computeOptimal(node) {
+        throw 'computeOptimal function not implemented for rule: ' + this.name
+    }
+
+    /* get or set computed payoff*/
+    computedPayoff(node, value){
+        return this.cValue(node, 'payoff[' + this.payoffIndex + ']', value)
     }
 
     /*Get or set object's computed value for current rule*/
-    cValue(object, fieldName, value){
-        return  object.computedValue(this.name, fieldName, value);
+    cValue(object, fieldPath, value) {
+        // if(fieldPath.trim() === 'payoff'){
+        //     fieldPath += '[' + this.payoffIndex + ']';
+        // }
+
+        return object.computedValue(this.name, fieldPath, value);
     }
 
-    baseProbability(edge){
+    baseProbability(edge) {
         return edge.computedBaseProbability();
     }
 
-    basePayoff(edge){
-        return edge.computedBasePayoff();
+    basePayoff(edge, payoffIndex) {
+        return edge.computedBasePayoff(undefined, payoffIndex || this.payoffIndex);
     }
 
-    clearComputedValues(object){
+    clearComputedValues(object) {
         object.clearComputedValues(this.name);
     }
 
-    add(a,b){
-        return ExpressionEngine.add(a,b)
-    }
-    subtract(a,b){
-        return ExpressionEngine.subtract(a,b)
-    }
-    divide(a,b){
-        return ExpressionEngine.divide(a,b)
+    add(a, b) {
+        return ExpressionEngine.add(a, b)
     }
 
-    multiply(a,b){
-        return ExpressionEngine.multiply(a,b)
+    subtract(a, b) {
+        return ExpressionEngine.subtract(a, b)
     }
 
-    max(){
+    divide(a, b) {
+        return ExpressionEngine.divide(a, b)
+    }
+
+    multiply(a, b) {
+        return ExpressionEngine.multiply(a, b)
+    }
+
+    max() {
         return ExpressionEngine.max(...arguments)
     }
 
-    min(){
+    min() {
         return ExpressionEngine.min(...arguments)
     }
 
