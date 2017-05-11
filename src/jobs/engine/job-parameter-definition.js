@@ -41,7 +41,7 @@ export class JobParameterDefinition {
         return this;
     }
 
-    validate(value) {
+    validate(value, allValues) {
         var isArray = Utils.isArray(value);
 
         if (this.maxOccurs > 1 && !isArray) {
@@ -49,25 +49,25 @@ export class JobParameterDefinition {
         }
 
         if (!isArray) {
-            return this.validateSingleValue(value)
+            return this.validateSingleValue(value, allValues)
         }
 
         if (value.length < this.minOccurs || value.length > this.maxOccurs) {
             return false;
         }
 
-        if (!value.every(this.validateSingleValue, this)) {
+        if (!value.every(v=>this.validateSingleValue(v, value))) {
             return false;
         }
 
         if (this.validator) {
-            return this.validator(value);
+            return this.validator(value, allValues);
         }
 
         return true;
     }
-
-    validateSingleValue(value) {
+    // allValues - all values on the same level
+    validateSingleValue(value, allValues) {
         if ((value === null || value === undefined) && this.minOccurs > 0) {
             return false
         }
@@ -99,7 +99,7 @@ export class JobParameterDefinition {
         }
 
         if (this.singleValueValidator) {
-            return this.singleValueValidator(value);
+            return this.singleValueValidator(value, allValues);
         }
 
         return true;

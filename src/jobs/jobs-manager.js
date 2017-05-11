@@ -1,5 +1,5 @@
 import {Utils, log} from "sd-utils";
-import {SensitivityAnalysisJob} from "./configurations/sensitivity-analysis/sensitivity-analysis-job";
+import {SensitivityAnalysisJob} from "./configurations/sensitivity-analysis/n-way/sensitivity-analysis-job";
 import {JobLauncher} from "./engine/job-launcher";
 import {JobWorker} from "./job-worker";
 import {JobExecutionListener} from "./engine/job-execution-listener";
@@ -7,11 +7,12 @@ import {JobParameters} from "./engine/job-parameters";
 import {IdbJobRepository} from "./engine/job-repository/idb-job-repository";
 import {JOB_EXECUTION_FLAG} from "./engine/job-execution-flag";
 import {RecomputeJob} from "./configurations/recompute/recompute-job";
-import {ProbabilisticSensitivityAnalysisJob} from "./configurations/probabilistic-sensitivity-analysis/probabilistic-sensitivity-analysis-job";
+import {ProbabilisticSensitivityAnalysisJob} from "./configurations/sensitivity-analysis/probabilistic/probabilistic-sensitivity-analysis-job";
 import {TimeoutJobRepository} from "./engine/job-repository/timeout-job-repository";
-import {TornadoDiagramJob} from "./configurations/tornado-diagram/tornado-diagram-job";
+import {TornadoDiagramJob} from "./configurations/sensitivity-analysis/tornado-diagram/tornado-diagram-job";
 import {JOB_STATUS} from "./engine/job-status";
 import {SimpleJobRepository} from "./engine/job-repository/simple-job-repository";
+import {LeagueTableJob} from "./configurations/league-table/league-table-job";
 
 
 export class JobsManagerConfig {
@@ -201,6 +202,7 @@ export class JobsManager extends JobExecutionListener {
         this.registerJob(new TornadoDiagramJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
         this.registerJob(probabilisticSensitivityAnalysisJob);
         this.registerJob(new RecomputeJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.registerJob(new LeagueTableJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
     }
 
     registerJob(job) {

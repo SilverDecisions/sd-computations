@@ -87,6 +87,7 @@
     "idb": "^2.0.0",
     "sd-expression-engine": "latest",
     "sd-model": "latest",
-    "sd-utils": "latest"
+    "sd-utils": "latest",
+    "sd-random": "latest"
   }
 }

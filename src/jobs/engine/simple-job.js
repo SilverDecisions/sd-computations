@@ -144,11 +144,18 @@ export class SimpleJob extends Job {
 
     getProgress(execution){
         var completedSteps = execution.stepExecutions.length;
+        let progress = {
+            total: this.steps.length,
+            current: completedSteps
+        };
+        if(!completedSteps){
+            return progress
+        }
         if(JOB_STATUS.COMPLETED !== execution.stepExecutions[execution.stepExecutions.length-1].status){
-            completedSteps--;
+            progress.current--;
         }
 
-        return Math.round(completedSteps * 100 / this.steps.length);
+        return progress;
     }
 
     addStep(){

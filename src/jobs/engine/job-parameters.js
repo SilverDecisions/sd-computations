@@ -22,7 +22,7 @@ export class JobParameters{
     }
 
     validate(){
-        return this.definitions.every((def, i)=>def.validate(this.values[def.name]));
+        return this.definitions.every((def, i)=>def.validate(this.values[def.name], this.values));
     }
 
     /*get or set value by path*/
