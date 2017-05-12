@@ -30,7 +30,7 @@ export class LeagueTableJob extends SimpleJob {
     jobResultToCsvRows(jobResult, jobParameters, withHeaders = true) {
         var result = [];
         if (withHeaders) {
-            var headers = ['policy_id', 'policy', 'criterion2', 'criterion1', 'dominated_by', 'extended-dominated_by', 'ICER'];
+            var headers = ['policy_id', 'policy', jobResult.payoffNames[jobResult.maximizedPayoffIndex], jobResult.payoffNames[jobResult.minimizedPayoffIndex], 'dominated_by', 'extended-dominated_by', 'ICER'];
             result.push(headers);
         }
 

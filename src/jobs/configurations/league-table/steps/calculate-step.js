@@ -112,6 +112,7 @@ export class CalculateStep extends Step {
         });
 
         jobResult.data = {
+            payoffNames: data.payoffNames.slice(),
             maximizedPayoffIndex: maximizedIndex,
             minimizedPayoffIndex: minimizedIndex,
             rows: rows.sort((a, b)=>(a.payoffs[maximizedIndex] - b.payoffs[maximizedIndex]) || (a.payoffs[minimizedIndex] - b.payoffs[minimizedIndex]))
