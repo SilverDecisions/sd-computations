@@ -18,7 +18,9 @@ export class ObjectiveRulesManager{
     ruleByName = {};
     rules = [];
 
+
     flipPair = {};
+    payoffIndex = 0;
 
     constructor(expressionEngine, currentRuleName) {
         this.expressionEngine = expressionEngine;
@@ -46,6 +48,11 @@ export class ObjectiveRulesManager{
 
     }
 
+
+    setPayoffIndex(payoffIndex){
+        this.payoffIndex = payoffIndex;
+    }
+
     addRule(rule){
         this.ruleByName[rule.name]=rule;
         this.rules.push(rule);
@@ -57,6 +64,10 @@ export class ObjectiveRulesManager{
 
     setCurrentRuleByName(ruleName){
         this.currentRule = this.ruleByName[ruleName];
+    }
+
+    getObjectiveRuleByName(ruleName){
+        return this.ruleByName[ruleName];
     }
 
     flipRule(){
@@ -96,6 +107,7 @@ export class ObjectiveRulesManager{
         }
 
         rules.forEach(rule=> {
+            rule.setPayoffIndex(this.payoffIndex);
             rule.setDecisionPolicy(decisionPolicy);
             rule.computePayoff(root);
             rule.computeOptimal(root);
@@ -125,7 +137,12 @@ export class ObjectiveRulesManager{
             return null;
         }
         if(name==='payoff'){
-            return e.computedValue(null, 'payoff');
+            if(this.currentRule.multiCriteria){
+                return e.computedValue(null, 'payoff');
+            }else{
+                return e.computedValue(null, 'payoff[' +this.payoffIndex + ']');
+            }
+
         }
         if(name==='optimal'){
             return e.computedValue(this.currentRule.name, 'optimal')
@@ -136,4 +153,6 @@ export class ObjectiveRulesManager{
         this.flipPair[rule1.name] = rule2;
         this.flipPair[rule2.name] = rule1;
     }
+
+
 }

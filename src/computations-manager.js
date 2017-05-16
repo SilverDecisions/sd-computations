@@ -89,6 +89,10 @@ export class ComputationsManager {
         return this.objectiveRulesManager.rules;
     }
 
+    getObjectiveRuleByName(ruleName){
+        return this.objectiveRulesManager.getObjectiveRuleByName(ruleName)
+    }
+
     isRuleName(ruleName) {
         return this.objectiveRulesManager.isRuleName(ruleName)
     }
