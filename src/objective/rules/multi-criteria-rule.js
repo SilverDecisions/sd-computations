@@ -92,13 +92,16 @@ export class MultiCriteriaRule extends ObjectiveRule {
             this.cValue(node, 'childrenPayoff', childrenPayoff);
         }
 
-        if (this.defaultWTP === Infinity) {
-            this.cValue(node, 'combinedPayoff', payoff[this.maximizedPayoffIndex]);
-        } else {
-            this.cValue(node, 'combinedPayoff', this.subtract(this.multiply(this.defaultWTP, payoff[this.maximizedPayoffIndex]), payoff[this.minimizedPayoffIndex]));
-        }
+        this.cValue(node, 'combinedPayoff', this.computeCombinedPayoff(payoff));
 
         return this.cValue(node, 'payoff', payoff);
+    }
+
+    computeCombinedPayoff(payoff){
+        if (this.defaultWTP === Infinity) {
+            return payoff[this.maximizedPayoffIndex];
+        }
+        return this.subtract(this.multiply(this.defaultWTP, payoff[this.maximizedPayoffIndex]), payoff[this.minimizedPayoffIndex]);
     }
 
     //  combinedPayoff - parent edge combinedPayoff
@@ -111,7 +114,7 @@ export class MultiCriteriaRule extends ObjectiveRule {
         node.childEdges.forEach(e=> {
             if (this.subtract(this.cValue(node, 'combinedPayoff'), combinedPayoff).equals(this.cValue(e.childNode, 'combinedPayoff')) || !(node instanceof model.DecisionNode)) {
                 this.cValue(e, 'optimal', true);
-                this.computeOptimal(e.childNode, this.basePayoff(e), this.multiply(probabilityToEnter, this.cValue(e, 'probability')));
+                this.computeOptimal(e.childNode, this.computeCombinedPayoff([this.basePayoff(e, 0), this.basePayoff(e, 1)]), this.multiply(probabilityToEnter, this.cValue(e, 'probability')));
             } else {
                 this.cValue(e, 'optimal', false);
             }

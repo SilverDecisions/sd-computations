@@ -12,6 +12,7 @@ module.exports = function (config) {
             'node_modules/jasmine-jquery/lib/jasmine-jquery.js',
             'node_modules/sd-utils/dist/sd-utils.js',
             'node_modules/sd-model/dist/sd-model.js',
+            'node_modules/sd-random/dist/sd-random.js',
             'node_modules/sd-expression-engine/dist/sd-expression-engine.js',
             'dist/sd-computations-vendor.js',
             'src/**/*.js',
@@ -64,7 +65,7 @@ module.exports = function (config) {
         },
 
         // start these browsers
-        browsers: ['PhantomJS'],
+        browsers: ['Chrome'],
         reporters: ['progress'],
         logLevel: config.LOG_WARN,
         singleRun: false,

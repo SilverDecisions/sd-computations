@@ -50,7 +50,7 @@ export class ObjectiveRulesManager{
 
 
     setPayoffIndex(payoffIndex){
-        this.payoffIndex = payoffIndex;
+        this.payoffIndex = payoffIndex || 0;
     }
 
     addRule(rule){

@@ -11,7 +11,7 @@ describe("Policies from", () => {
     fixtures.fixturesPath = "base/test/";
     var fileList = JSON.parse(readFixtures("data-json-filelist.json"));
 
-    fileList.filter(n=>true).forEach(function (fileName) {
+    fileList.filter(n=>n.lastIndexOf('policies', 0) === 0).forEach(function (fileName) {
 
 
         describe(fileName+":", function(){

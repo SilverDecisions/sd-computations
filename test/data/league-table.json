@@ -1,0 +1,18 @@
+{
+    "csv":[
+        ["policy_id",   "policy", "criterion1", "criterion2", "dominated_by", "extended-dominated_by", "ICER"],
+        [1, ":blah1", 5, -5, 3, null, null],
+        [2, ":blah2", 6, -5, 3, null, null],
+        [2, ":blah3", 6, -5, 3, null, null],
+        [3, ":blah4", 1, -1, null, null, 0],
+        [4, ":blah5", 4, 0, null, "3, 5", null],
+        [5, ":blah6", 5, 3, null, null, 1],
+        [6, ":blah7", 9, 5, null, null, 2],
+        [7, ":blah8", 20, 6, 8, null, null],
+        [8, ":blah9", 19, 7, null, null, 5]
+    ],
+    "params":{
+        "ruleName": "min-max"
+    },
+    "treeFile": "mcdm.json"
+}
