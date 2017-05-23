@@ -66,8 +66,25 @@ export class ComputationsManager {
     flipCriteria(data){
         data = data || this.data;
         data.reversePayoffs();
+        let tmp = data.weightLowerBound;
+        data.weightLowerBound = this.flip(data.weightUpperBound);
+        data.weightUpperBound = this.flip(tmp);
+        data.defaultCriterion1Weight = this.flip(data.defaultCriterion1Weight);
         this.objectiveRulesManager.flipRule();
         return this.checkValidityAndRecomputeObjective(false);
+    }
+
+    flip(a){
+        if(a == Infinity){
+            return 0;
+        }
+
+        if(a == 0){
+            return Infinity;
+        }
+
+        return ExpressionEngine.divide(1, a)
+
     }
 
     getJobByName(jobName) {
@@ -82,7 +99,6 @@ export class ComputationsManager {
         return this.runJob(name, jobParamsValues).then(je=> {
             return new JobInstanceManager(this.jobsManger, je, jobInstanceManagerConfig);
         })
-
     }
 
     getObjectiveRules() {
@@ -129,7 +145,7 @@ export class ComputationsManager {
     }
 
     _checkValidityAndRecomputeObjective(data, allRules, evalCode = false, evalNumeric = true) {
-        this.objectiveRulesManager.updateDefaultWTP(data.defaultWTP);
+        this.objectiveRulesManager.updateDefaultCriterion1Weight(data.defaultCriterion1Weight);
         data.validationResults = [];
 
         if (evalCode || evalNumeric) {

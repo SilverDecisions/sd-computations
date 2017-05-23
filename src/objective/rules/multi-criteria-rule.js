@@ -5,19 +5,17 @@ import {Policy} from "../../policies/policy";
 
 export class MultiCriteriaRule extends ObjectiveRule {
 
-    defaultWTP = 1;
+    criterion1Weight = 1;
+    payoffCoeffs = [1, -1];
 
-    minimizedPayoffIndex = 0;
-    maximizedPayoffIndex = 1;
-
-    constructor(name, minimizedPayoffIndex, maximizedPayoffIndex, expressionEngine) {
+    constructor(name, payoffCoeffs, expressionEngine) {
         super(name, true, expressionEngine, true);
-        this.minimizedPayoffIndex = minimizedPayoffIndex;
-        this.maximizedPayoffIndex = maximizedPayoffIndex;
+        this.payoffCoeffs = payoffCoeffs;
+
     }
 
-    setDefaultWTP(defaultWTP) {
-        this.defaultWTP = defaultWTP;
+    setDefaultCriterion1Weight(criterion1Weight) {
+        this.criterion1Weight = criterion1Weight;
     }
 
     // payoff - parent edge payoff, aggregatedPayoff - aggregated payoff along path
@@ -98,10 +96,11 @@ export class MultiCriteriaRule extends ObjectiveRule {
     }
 
     computeCombinedPayoff(payoff){
-        if (this.defaultWTP === Infinity) {
-            return payoff[this.maximizedPayoffIndex];
+        // [criterion 1 coeff]*[criterion 1]*[weight]+[criterion 2 coeff]*[criterion 2]
+        if (this.criterion1Weight === Infinity) {
+            return this.multiply(this.payoffCoeffs[0], payoff[0]);
         }
-        return this.subtract(this.multiply(this.defaultWTP, payoff[this.maximizedPayoffIndex]), payoff[this.minimizedPayoffIndex]);
+        return this.add(this.multiply(this.payoffCoeffs[0], this.multiply(this.criterion1Weight, payoff[0])), this.multiply(this.payoffCoeffs[1], payoff[1]));
     }
 
     //  combinedPayoff - parent edge combinedPayoff

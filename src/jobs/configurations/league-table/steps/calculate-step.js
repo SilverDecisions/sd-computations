@@ -25,8 +25,7 @@ export class CalculateStep extends Step {
         var policies = policiesCollector.policies;
 
 
-        var minimizedIndex = this.minimizedIndex = rule.minimizedPayoffIndex;
-        var maximizedIndex = this.maximizedIndex = rule.maximizedPayoffIndex;
+        var payoffCoeffs = this.payoffCoeffs = rule.payoffCoeffs;
 
         this.expressionsEvaluator.evalExpressions(data);
         var vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
@@ -35,7 +34,7 @@ export class CalculateStep extends Step {
             return stepExecution;
         }
 
-        var compare = (a, b)=>(b.payoffs[maximizedIndex] - a.payoffs[maximizedIndex]) || (a.payoffs[minimizedIndex] - b.payoffs[minimizedIndex]);
+        var compare = (a, b)=>(-payoffCoeffs[0] *  (b.payoffs[0] - a.payoffs[0])) || (-payoffCoeffs[1] *  (a.payoffs[1] - b.payoffs[1]));
 
         var rows = policies.map(policy => {
             this.objectiveRulesManager.recomputeTree(treeRoot, false, policy);
@@ -44,7 +43,7 @@ export class CalculateStep extends Step {
                 payoffs: treeRoot.computedValue(ruleName, 'payoff').slice(),
                 dominatedBy: null,
                 extendedDominatedBy: null,
-                ICER: null
+                incratio: null
             }
         }).sort(compare);
 
@@ -61,33 +60,48 @@ export class CalculateStep extends Step {
             return previousValue.concat(currentValue)
         }, []);
 
-        rows.sort((a, b)=>(a.payoffs[maximizedIndex] - b.payoffs[maximizedIndex]) || (a.payoffs[minimizedIndex] - b.payoffs[minimizedIndex]));
+        rows.sort((a, b)=>(payoffCoeffs[0] *  (a.payoffs[0] - b.payoffs[0])) || (-payoffCoeffs[1] *   (a.payoffs[1] - b.payoffs[1])));
         rows.forEach((r, i)=> {
             r.id = i+1;
         });
-        rows.sort(compare);
+        // rows.sort(compare);
+        rows.sort((a, b)=>(-payoffCoeffs[0] *  (a.payoffs[0] - b.payoffs[0])) || (-payoffCoeffs[1] *   (a.payoffs[1] - b.payoffs[1])));
 
-        let minCost = Infinity,
-            minCostRow = null;
+        let bestCost = -payoffCoeffs[1] * Infinity,
+            bestCostRow = null;
+
+        let cmp= (a, b) => a > b;
+        if(payoffCoeffs[1]<0){
+            cmp= (a, b) => a < b;
+        }
 
         rows.forEach((r, i)=> {
-            if (r.payoffs[minimizedIndex] < minCost) {
-                minCost = r.payoffs[minimizedIndex];
-                minCostRow = r;
-            } else if(minCostRow) {
-                r.dominatedBy = minCostRow.id;
+            if (cmp(r.payoffs[1], bestCost)) {
+                bestCost = r.payoffs[1];
+                bestCostRow = r;
+            } else if(bestCostRow) {
+                r.dominatedBy = bestCostRow.id;
             }
         });
 
+        cmp= (a, b) => a < b;
+        if(payoffCoeffs[0] > 0 && payoffCoeffs[1] < 0){
+            cmp= (a, b) => a < b;
+        }else if(payoffCoeffs[0] < 0 && payoffCoeffs[1] > 0){
+            cmp= (a, b) => a < b;
+        }else if(payoffCoeffs[1]<0){
+            cmp= (a, b) => a > b;
+        }
 
-        rows.filter(r=>!r.dominatedBy).sort((a, b)=>(a.payoffs[maximizedIndex] - b.payoffs[maximizedIndex])).forEach((r, i, arr)=> {
+        rows.filter(r=>!r.dominatedBy).sort((a, b)=>(  payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0]))).forEach((r, i, arr)=> {
             if (i == 0) {
-                r.ICER = 0;
+                r.incratio = 0;
                 return;
             }
+
             let prev = arr[i - 1];
 
-            r.ICER = this.computeICER(r, prev);
+            r.incratio = this.computeICER(r, prev);
             if (i < 2) {
                 return;
             }
@@ -97,25 +111,43 @@ export class CalculateStep extends Step {
                 return;
             }
 
-            if(r.ICER < prev.ICER){
-                prev.ICER = null;
+            if(cmp(r.incratio,prev.incratio)){
+                prev.incratio = null;
                 prev.extendedDominatedBy = [prev2.id, r.id] ;
 
-                r.ICER = this.computeICER(r, prev2);
+                r.incratio = this.computeICER(r, prev2);
             }
         });
+
+        let weightLowerBound = data.weightLowerBound;
+        let weightUpperBound = data.weightUpperBound;
+        //mark optimal for weight in [weightLowerBound, weightUpperBound]
+        let lastLELower = null;
+        rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => a.incratio - b.incratio).forEach((row, i, arr)=>{
+
+            if(row.incratio <= weightLowerBound){
+                lastLELower  = row;
+            }else if(row.incratio == weightLowerBound){
+                lastLELower = null;
+            }
+
+            row.optimal = row.incratio >= weightLowerBound && row.incratio <= weightUpperBound;
+
+        });
+        if(lastLELower){
+            lastLELower.optimal = true;
+        }
 
         rows.forEach(row=>{
             row.payoffs[0] =  ExpressionEngine.toFloat(row.payoffs[0]);
             row.payoffs[1] =  ExpressionEngine.toFloat(row.payoffs[1]);
-            row.ICER = row.ICER === null ? null : ExpressionEngine.toFloat(row.ICER);
+            row.incratio = row.incratio === null ? null : ExpressionEngine.toFloat(row.incratio);
         });
 
         jobResult.data = {
             payoffNames: data.payoffNames.slice(),
-            maximizedPayoffIndex: maximizedIndex,
-            minimizedPayoffIndex: minimizedIndex,
-            rows: rows.sort((a, b)=>(a.payoffs[maximizedIndex] - b.payoffs[maximizedIndex]) || (a.payoffs[minimizedIndex] - b.payoffs[minimizedIndex]))
+            payoffCoeffs : payoffCoeffs,
+            rows: rows.sort((a, b)=>(a.id - b.id))
         };
 
 
@@ -124,14 +156,14 @@ export class CalculateStep extends Step {
     }
 
     computeICER(r, prev){
-        let d = ExpressionEngine.subtract(r.payoffs[this.maximizedIndex], prev.payoffs[this.maximizedIndex]);
-        let n = ExpressionEngine.subtract(r.payoffs[this.minimizedIndex], prev.payoffs[this.minimizedIndex]);
+        let d = ExpressionEngine.subtract(r.payoffs[0], prev.payoffs[0]);
+        let n = ExpressionEngine.subtract(r.payoffs[1], prev.payoffs[1]);
         if (d == 0){
             if(n<0){
                 return - Infinity;
             }
             return Infinity;
         }
-        return ExpressionEngine.divide(n, d);
+        return Math.abs(ExpressionEngine.divide(n, d));
     }
 }

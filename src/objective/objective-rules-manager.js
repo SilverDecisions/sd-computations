@@ -10,6 +10,8 @@ import {log} from "sd-utils";
 import * as model from "sd-model";
 import {MinMaxRule} from "./rules/min-max-rule";
 import {MaxMinRule} from "./rules/max-min-rule";
+import {MinMinRule} from "./rules/min-min-rule";
+import {MaxMaxRule} from "./rules/max-max-rule";
 
 export class ObjectiveRulesManager{
 
@@ -35,9 +37,12 @@ export class ObjectiveRulesManager{
         this.addRule(minMax);
         let maxMin = new MaxMinRule(expressionEngine);
         this.addRule(maxMin);
-
         this.addFlipPair(minMax, maxMin);
 
+        let minMin = new MinMinRule(expressionEngine);
+        this.addRule(minMin);
+        let maxMax = new MaxMaxRule(expressionEngine);
+        this.addRule(maxMax);
 
 
         if (currentRuleName) {
@@ -77,8 +82,8 @@ export class ObjectiveRulesManager{
         }
     }
 
-    updateDefaultWTP(defaultWTP){
-        this.rules.filter(r=>r.multiCriteria).forEach(r=>r.setDefaultWTP(parseFloat(defaultWTP)));
+    updateDefaultCriterion1Weight(defaultCriterion1Weight){
+        this.rules.filter(r=>r.multiCriteria).forEach(r=>r.setDefaultCriterion1Weight(parseFloat(defaultCriterion1Weight)));
     }
 
     recompute(dataModel, allRules, decisionPolicy=null){

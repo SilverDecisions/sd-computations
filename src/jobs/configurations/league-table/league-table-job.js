@@ -30,7 +30,7 @@ export class LeagueTableJob extends SimpleJob {
     jobResultToCsvRows(jobResult, jobParameters, withHeaders = true) {
         var result = [];
         if (withHeaders) {
-            var headers = ['policy_id', 'policy', jobResult.payoffNames[jobResult.maximizedPayoffIndex], jobResult.payoffNames[jobResult.minimizedPayoffIndex], 'dominated_by', 'extended-dominated_by', 'ICER'];
+            var headers = ['policy_id', 'policy', jobResult.payoffNames[0], jobResult.payoffNames[1], 'dominated_by', 'extended-dominated_by', 'incratio'];
             result.push(headers);
         }
 
@@ -43,11 +43,9 @@ export class LeagueTableJob extends SimpleJob {
                     row.payoffs[0],
                     row.dominatedBy,
                     row.extendedDominatedBy === null ? null : row.extendedDominatedBy[0] + ', ' + row.extendedDominatedBy[1],
-                    row.ICER
+                    row.incratio
                 ];
-
                 result.push(rowCells);
-
             })
         });
 
