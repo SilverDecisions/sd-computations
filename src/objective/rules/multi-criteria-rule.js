@@ -85,7 +85,7 @@ export class MultiCriteriaRule extends ObjectiveRule {
 
         if (node instanceof model.TerminalNode) {
             this.cValue(node, 'aggregatedPayoff', aggregatedPayoff);
-            this.cValue(node, 'probabilityToEnter', [0, 0]); //initial value
+            this.cValue(node, 'probabilityToEnter', 0); //initial value
         } else {
             this.cValue(node, 'childrenPayoff', childrenPayoff);
         }
