@@ -93,6 +93,7 @@ export class CalculateStep extends Step {
             cmp= (a, b) => a > b;
         }
 
+        let prev2NotDominated = null;
         rows.filter(r=>!r.dominatedBy).sort((a, b)=>(  payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0]))).forEach((r, i, arr)=> {
             if (i == 0) {
                 r.incratio = 0;
@@ -106,21 +107,21 @@ export class CalculateStep extends Step {
                 return;
             }
 
-            let prev2 = arr[i - 2];
-            if (prev2.extendedDominatedBy !== null) {
-                return;
+            if(!prev2NotDominated){
+                prev2NotDominated = arr[i - 2];
             }
 
             if(cmp(r.incratio,prev.incratio)){
                 prev.incratio = null;
-                prev.extendedDominatedBy = [prev2.id, r.id] ;
-
-                r.incratio = this.computeICER(r, prev2);
+                prev.extendedDominatedBy = [prev2NotDominated.id, r.id] ;
+                r.incratio = this.computeICER(r, prev2NotDominated);
+            }else{
+                prev2NotDominated = prev;
             }
         });
 
-        let weightLowerBound = data.weightLowerBound;
-        let weightUpperBound = data.weightUpperBound;
+        let weightLowerBound = (data.weightLowerBound !== Infinity) ? ExpressionEngine.toNumber(data.weightLowerBound) : data.weightLowerBound;
+        let weightUpperBound = (data.weightUpperBound !== Infinity) ? ExpressionEngine.toNumber(data.weightUpperBound) : data.weightUpperBound;
         //mark optimal for weight in [weightLowerBound, weightUpperBound]
         let lastLELower = null;
         rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => a.incratio - b.incratio).forEach((row, i, arr)=>{
