@@ -1,4 +1,6 @@
 import {Utils} from "sd-utils";
+import {ExpressionEngine} from "sd-expression-engine";
+
 export const PARAMETER_TYPE = {
     STRING: 'STRING',
     DATE: 'DATE',
@@ -66,6 +68,20 @@ export class JobParameterDefinition {
 
         return true;
     }
+
+    static computeNumberExpression(val){
+        let parsed = parseFloat(val);
+        if(parsed === Infinity || parsed === -Infinity) {
+            return parsed;
+        }
+
+        if(!ExpressionEngine.validate(val, {})){
+            return null
+        }
+
+        return ExpressionEngine.toNumber(val)
+    }
+
     // allValues - all values on the same level
     validateSingleValue(value, allValues) {
         if ((value === null || value === undefined) && this.minOccurs > 0) {
@@ -89,6 +105,14 @@ export class JobParameterDefinition {
             return false;
         }
 
+
+        if (PARAMETER_TYPE.NUMBER_EXPRESSION === this.type) {
+            value = JobParameterDefinition.computeNumberExpression(value);
+            if(value === null){
+                return false
+            }
+        }
+
         if (PARAMETER_TYPE.COMPOSITE === this.type) {
             if (!Utils.isObject(value)) {
                 return false;
@@ -103,5 +127,13 @@ export class JobParameterDefinition {
         }
 
         return true;
+    }
+
+    value(value){
+        if(PARAMETER_TYPE.NUMBER_EXPRESSION === this.type) {
+            return JobParameterDefinition.computeNumberExpression(value);
+        }
+
+        return value;
     }
 }

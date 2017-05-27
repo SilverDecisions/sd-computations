@@ -120,8 +120,9 @@ export class CalculateStep extends Step {
             }
         });
 
-        let weightLowerBound = (data.weightLowerBound !== Infinity) ? ExpressionEngine.toNumber(data.weightLowerBound) : data.weightLowerBound;
-        let weightUpperBound = (data.weightUpperBound !== Infinity) ? ExpressionEngine.toNumber(data.weightUpperBound) : data.weightUpperBound;
+        let weightLowerBound = params.value("weightLowerBound");
+        let weightUpperBound = params.value("weightUpperBound");
+
         //mark optimal for weight in [weightLowerBound, weightUpperBound]
         let lastLELower = null;
         rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => a.incratio - b.incratio).forEach((row, i, arr)=>{
@@ -148,7 +149,9 @@ export class CalculateStep extends Step {
         jobResult.data = {
             payoffNames: data.payoffNames.slice(),
             payoffCoeffs : payoffCoeffs,
-            rows: rows.sort((a, b)=>(a.id - b.id))
+            rows: rows.sort((a, b)=>(a.id - b.id)),
+            weightLowerBound: ExpressionEngine.toFloat(weightLowerBound),
+            weightUpperBound: ExpressionEngine.toFloat(weightUpperBound)
         };
 
 

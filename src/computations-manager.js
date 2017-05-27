@@ -8,6 +8,7 @@ import {ExpressionsEvaluator} from "./expressions-evaluator";
 import {JobInstanceManager} from "./jobs/job-instance-manager";
 import {domain as model} from "sd-model";
 import {Policy} from "./policies/policy";
+import {McdmWeightValueValidator} from "./validation/mcdm-weight-value-validator";
 
 export class ComputationsManagerConfig {
 
@@ -52,6 +53,7 @@ export class ComputationsManager {
             clearRepository: this.config.clearRepository
         });
         this.treeValidator = new TreeValidator(this.expressionEngine);
+        this.mcdmWeightValueValidator = new McdmWeightValueValidator(this.expressionEngine);
     }
 
     setConfig(config) {
@@ -145,6 +147,7 @@ export class ComputationsManager {
     }
 
     _checkValidityAndRecomputeObjective(data, allRules, evalCode = false, evalNumeric = true) {
+
         this.objectiveRulesManager.updateDefaultCriterion1Weight(data.defaultCriterion1Weight);
         data.validationResults = [];
 
@@ -152,10 +155,14 @@ export class ComputationsManager {
             this.expressionsEvaluator.evalExpressions(data, evalCode, evalNumeric);
         }
 
+        var weightValid = this.mcdmWeightValueValidator.validate(data.defaultCriterion1Weight);
+        var multiCriteria = this.getCurrentRule().multiCriteria;
+
+
         data.getRoots().forEach(root=> {
             var vr = this.treeValidator.validate(data.getAllNodesInSubtree(root));
             data.validationResults.push(vr);
-            if (vr.isValid()) {
+            if (vr.isValid() && (!multiCriteria || weightValid)) {
                 this.objectiveRulesManager.recomputeTree(root, allRules);
             }
         });
