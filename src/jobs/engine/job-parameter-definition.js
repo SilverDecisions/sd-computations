@@ -75,7 +75,7 @@ export class JobParameterDefinition {
             return parsed;
         }
 
-        if(!ExpressionEngine.validate(val, {})){
+        if(!ExpressionEngine.validate(val, {}, false)){
             return null
         }
 

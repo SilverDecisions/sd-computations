@@ -53,7 +53,7 @@ export class ComputationsManager {
             clearRepository: this.config.clearRepository
         });
         this.treeValidator = new TreeValidator(this.expressionEngine);
-        this.mcdmWeightValueValidator = new McdmWeightValueValidator(this.expressionEngine);
+        this.mcdmWeightValueValidator = new McdmWeightValueValidator();
     }
 
     setConfig(config) {
@@ -86,7 +86,6 @@ export class ComputationsManager {
         }
 
         return ExpressionEngine.divide(1, a)
-
     }
 
     getJobByName(jobName) {
