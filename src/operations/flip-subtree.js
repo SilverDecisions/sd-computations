@@ -124,7 +124,10 @@ export class FlipSubtree extends Operation{
 
                 var grandChildEdge = this.data.attachSubtree(grandChild, child);
                 grandChildEdge.name = rootClone.childEdges[j].name;
-                grandChildEdge.payoff = ExpressionEngine.add(rootClone.childEdges[j].computedBasePayoff(), rootClone.childEdges[j].childNode.childEdges[i].computedBasePayoff());
+                grandChildEdge.payoff = [
+                    ExpressionEngine.add(rootClone.childEdges[j].computedBasePayoff(0), rootClone.childEdges[j].childNode.childEdges[i].computedBasePayoff(0)),
+                    ExpressionEngine.add(rootClone.childEdges[j].computedBasePayoff(1), rootClone.childEdges[j].childNode.childEdges[i].computedBasePayoff(1)),
+                ];
 
                 grandChildEdge.probability = ExpressionEngine.multiply(rootClone.childEdges[j].computedBaseProbability(), rootClone.childEdges[j].childNode.childEdges[i].computedBaseProbability());
                 edge.probability = ExpressionEngine.add(edge.probability, grandChildEdge.probability);
