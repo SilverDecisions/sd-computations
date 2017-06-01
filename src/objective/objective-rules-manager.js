@@ -83,7 +83,7 @@ export class ObjectiveRulesManager{
     }
 
     updateDefaultCriterion1Weight(defaultCriterion1Weight){
-        this.rules.filter(r=>r.multiCriteria).forEach(r=>r.setDefaultCriterion1Weight(parseFloat(defaultCriterion1Weight)));
+        this.rules.filter(r=>r.multiCriteria).forEach(r=>r.setDefaultCriterion1Weight(defaultCriterion1Weight));
     }
 
     recompute(dataModel, allRules, decisionPolicy=null){

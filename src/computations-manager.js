@@ -85,7 +85,7 @@ export class ComputationsManager {
             return Infinity;
         }
 
-        return ExpressionEngine.divide(1, a)
+        return this.expressionEngine.serialize(ExpressionEngine.divide(1, a))
     }
 
     getJobByName(jobName) {
