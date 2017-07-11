@@ -50,7 +50,7 @@ gulp.task('build', ['build-standalone', 'build-module' ,'build-vendor'], functio
 
 gulp.task('build-standalone', function () {
     var jsFileName =  projectName;
-    return buildJs('./standalone.index.js', standaloneName, jsFileName, "dist/standalone")
+    return buildJs('./standalone.index.js', standaloneName, jsFileName, "dist/standalone", false, true)
 });
 
 gulp.task('build-module', function () {
@@ -92,7 +92,7 @@ function runTest(singleRun, done){
 }
 
 
-function buildJs(src, standaloneName,  jsFileName, dest, external) {
+function buildJs(src, standaloneName,  jsFileName, dest, external, failOnError) {
     if(!external){
         external = []
     }
@@ -110,27 +110,32 @@ function buildJs(src, standaloneName,  jsFileName, dest, external) {
     // .plugin(resolutions, '*')
         .external(external)
 
-    return finishBrowserifyBuild(b,jsFileName, dest)
+    return finishBrowserifyBuild(b,jsFileName, dest, failOnError)
 }
 
-function buildJsDependencies(jsFileName, moduleNames, dest){
+function buildJsDependencies(jsFileName, moduleNames, dest, failOnError){
     var b = browserify({
         debug: true,
         require: [moduleNames]
     })
 
-    return finishBrowserifyBuild(b, jsFileName, dest)
+    return finishBrowserifyBuild(b, jsFileName, dest, failOnError)
 }
 
-function finishBrowserifyBuild(b, jsFileName, dest){
+function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
     var pipe = b
         .transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["babel-plugin-transform-builtin-extend", {globals: ["Error"]}]]})
-        .bundle()
-        .on('error', map_error)
-        .pipe(plugins.plumber({ errorHandler: onError }))
-        .pipe(source(jsFileName+'.js'))
+        .bundle();
+    if(!failOnError){
+        pipe = pipe.on('error', map_error )
+            .pipe(plugins.plumber({ errorHandler: onError }))
+    }
+
+
+    pipe = pipe.pipe(source(jsFileName+'.js'))
         .pipe(gulp.dest(dest))
         .pipe(buffer());
+
     var development = (argv.dev === undefined) ? false : true;
     if(!development){
         pipe.pipe(sourcemaps.init({loadMaps: true}))
@@ -152,7 +157,6 @@ gulp.task('default',  function(cb) {
     runSequence('build-clean', 'test', cb);
 });
 
-// error function for plumber
 var onError = function (err) {
     console.log('onError', err);
     this.emit('end');
