@@ -14,6 +14,7 @@ var p = require('./package.json'),
     stringify = require('stringify');
 
 var Server = require('karma').Server;
+var runSequence = require('run-sequence');
 
 /* nicer browserify errors */
 var gutil = require('gulp-util')
@@ -40,8 +41,8 @@ gulp.task('clean', function (cb) {
     return del(['tmp', 'dist'], cb);
 });
 
-gulp.task('build-clean', ['clean'], function () {
-    return gulp.start('build');
+gulp.task('build-clean', ['clean'], function (cb) {
+    runSequence('clean', 'build', cb)
 });
 
 gulp.task('build', ['build-standalone', 'build-module' ,'build-vendor'], function () {
@@ -74,15 +75,15 @@ gulp.task('prepare-test', function(){
 });
 
 gulp.task('test', ['prepare-test'], function (done) {
-    runTest(true, done)
+    return runTest(true, done)
 });
 
 gulp.task('test-watch', ['prepare-test'], function (done) {
-    runTest(false, done)
+    return runTest(false, done)
 });
 
 function runTest(singleRun, done){
-    new Server({
+    return new Server({
         configFile: __dirname + '/karma.conf.js',
         singleRun: singleRun
     }, function () {
@@ -147,7 +148,8 @@ function finishBrowserifyBuild(b, jsFileName, dest){
     return pipe;
 }
 
-gulp.task('default', ['build-clean'],  function() {
+gulp.task('default',  function(cb) {
+    runSequence('build-clean', 'test', cb);
 });
 
 // error function for plumber

@@ -1,6 +1,6 @@
 {
   "name": "sd-computations",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "SilverDecisions computations module",
   "main": "index.js",
   "directories": {
@@ -49,11 +49,12 @@
   },
   "devDependencies": {
     "babel-plugin-transform-builtin-extend": "^1.1.2",
-    "babel-plugin-transform-class-properties": "^6.11.5",
+    "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-assign": "^6.8.0",
     "babel-preset-es2015": "^6.14.0",
     "babelify": "^7.3.0",
     "browserify": "^13.1.0",
+    "browserify-istanbul": "^2.0.0",
     "browserify-resolutions": "^1.1.0",
     "chalk": "^1.1.3",
     "del": "^2.2.0",
@@ -67,16 +68,19 @@
     "gulp-sourcemaps": "^1.6.0",
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
+    "istanbul": "^0.4.5",
     "jasmine": "^2.5.2",
     "jasmine-jquery": "^2.1.1",
     "jquery": "^3.2.0",
-    "karma": "^1.3.0",
+    "karma": "^1.7.0",
     "karma-browserify": "^5.1.1",
     "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
     "karma-jasmine": "^1.0.2",
     "karma-phantomjs-launcher": "^1.0.2",
     "merge-stream": "^1.0.0",
     "phantomjs": "^2.1.7",
+    "run-sequence": "^2.0.0",
     "stringify": "^5.1.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
@@ -85,9 +89,9 @@
   },
   "dependencies": {
     "idb": "^2.0.0",
-    "sd-expression-engine": "latest",
-    "sd-model": "latest",
-    "sd-utils": "latest",
-    "sd-random": "latest"
+    "sd-expression-engine": "0.1.7",
+    "sd-model": "0.2.0",
+    "sd-utils": "0.1.8",
+    "sd-random": "0.1.0"
   }
 }

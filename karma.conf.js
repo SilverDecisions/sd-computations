@@ -1,3 +1,5 @@
+var istanbul = require('browserify-istanbul');
+
 module.exports = function (config) {
     config.set({
         frameworks: ['browserify','jasmine'],
@@ -5,15 +7,17 @@ module.exports = function (config) {
             'karma-browserify',
             'karma-phantomjs-launcher',
             'karma-chrome-launcher',
-            'karma-jasmine'
+            'karma-jasmine',
+            'karma-coverage',
         ],
         files:[
             'node_modules/jquery/dist/jquery.js',
             'node_modules/jasmine-jquery/lib/jasmine-jquery.js',
-            'node_modules/sd-utils/dist/sd-utils.js',
-            'node_modules/sd-model/dist/sd-model.js',
+
             'node_modules/sd-random/dist/sd-random.js',
+            'node_modules/sd-utils/dist/sd-utils.js',
             'node_modules/sd-expression-engine/dist/sd-expression-engine.js',
+            'node_modules/sd-model/dist/sd-model.js',
             'dist/sd-computations-vendor.js',
             'src/**/*.js',
             'test/*.js',
@@ -39,6 +43,7 @@ module.exports = function (config) {
 
         browserify: {
             debug: true,
+
             "transform": [
                 [
                     "babelify",
@@ -58,20 +63,34 @@ module.exports = function (config) {
                                 }
                             ]
                         ]
-                    }
-                ]
-            ],
-            bundleExternal: false
+                    },
+                ],
+                [
+                    'browserify-istanbul',
+                    {
+                        instrumenterConfig: {
+                            embedSource: true
+                        }
+                    }]
+            ]
         },
 
         // start these browsers
         browsers: ['Chrome'],
-        reporters: ['progress'],
+        reporters: ['progress', 'coverage'],
         logLevel: config.LOG_WARN,
         singleRun: false,
         browserConsoleLogOptions: {
             terminal: true,
             level: ""
+        },
+
+        coverageReporter: {
+            reporters: [
+                // {'type': 'text'},
+                {'type': 'html', dir: 'coverage'},
+                {'type': 'lcov'}
+            ]
         }
     });
 };

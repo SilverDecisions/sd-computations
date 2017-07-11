@@ -4,28 +4,28 @@ import {DataModel} from "sd-model";
 
 describe("Policies from", () => {
 
-    var expressionEngine = new ExpressionEngine();
+    let expressionEngine = new ExpressionEngine();
 
-    var fixtures = jasmine.getFixtures();
+    let fixtures = jasmine.getFixtures();
 
     fixtures.fixturesPath = "base/test/";
-    var fileList = JSON.parse(readFixtures("data-json-filelist.json"));
+    let fileList = JSON.parse(readFixtures("data-json-filelist.json"));
 
     fileList.filter(n=>n.lastIndexOf('policies', 0) === 0).forEach(function (fileName) {
 
 
         describe(fileName+":", function(){
-            var data;
-            var collector;
-            var policies;
+            let data;
+            let collector;
+            let policies;
 
-            var json = loadData(fileName);
+            let json = loadData(fileName);
             data = new DataModel(json.data);
             policies = json.policies;
 
 
             beforeEach(function() {
-                var treeRoot = data.getRoots()[0];
+                let treeRoot = data.getRoots()[0];
                 collector = new PoliciesCollector(treeRoot);
             });
 
@@ -49,7 +49,7 @@ describe("Policies from", () => {
 
 
 function loadData(fileName){
-    var o = JSON.parse(readFixtures("data/"+fileName));
+    let o = JSON.parse(readFixtures("data/"+fileName));
     o.data = JSON.parse(readFixtures("trees/"+o.treeFile)).data;
     return o;
 }

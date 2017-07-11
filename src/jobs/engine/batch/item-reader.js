@@ -4,7 +4,9 @@ export class ItemReader{
     currentItemCount = 0;
     maxItemCount = Number.MAX_SAFE_INTEGER;
 
-    constructor
+    constructor(){
+
+    }
 
     doRead(){
 

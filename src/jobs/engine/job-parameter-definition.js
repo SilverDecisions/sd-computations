@@ -79,7 +79,7 @@ export class JobParameterDefinition {
             return null
         }
 
-        return ExpressionEngine.toNumber(val)
+        return ExpressionEngine.eval(val, true)
     }
 
     // allValues - all values on the same level
@@ -102,6 +102,10 @@ export class JobParameterDefinition {
             return false;
         }
         if (PARAMETER_TYPE.NUMBER === this.type && !Utils.isNumber(value)) {
+            return false;
+        }
+
+        if (PARAMETER_TYPE.BOOLEAN === this.type && !Utils.isBoolean(value)) {
             return false;
         }
 
