@@ -76,7 +76,7 @@ module.exports = function (config) {
         },
 
         // start these browsers
-        browsers: ['Chrome'],
+        browsers: ['ChromeHeadless'],
         reporters: ['progress', 'coverage'],
         logLevel: config.LOG_WARN,
         singleRun: false,
