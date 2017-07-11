@@ -1,0 +1,14 @@
+sudo: required
+dist: trusty
+language: node_js
+install:
+  - npm install -g gulp-cli
+  - npm install
+script: gulp
+cache:
+  directories:
+    - "node_modules"
+addons:
+  apt:
+    packages:
+      - google-chrome-stable
