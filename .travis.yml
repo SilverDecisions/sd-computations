@@ -12,3 +12,5 @@ addons:
   apt:
     packages:
       - google-chrome-stable
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
