@@ -24,7 +24,7 @@ describe("League table from", () => {
 
             let json = loadData(fileName);
             data = new DataModel(json.data);
-            console.log(data);
+            //console.log(data);
             csv = json.csv;
             let params = json.params;
             let promiseResult;

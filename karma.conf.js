@@ -7,6 +7,7 @@ module.exports = function (config) {
             'karma-browserify',
             'karma-phantomjs-launcher',
             'karma-chrome-launcher',
+            'karma-firefox-launcher',
             'karma-jasmine',
             'karma-coverage',
         ],
@@ -76,7 +77,7 @@ module.exports = function (config) {
         },
 
         // start these browsers
-        browsers: ['ChromeHeadless'],
+        browsers: ['ChromeHeadless', 'Firefox'],
         reporters: ['progress', 'coverage'],
         logLevel: config.LOG_WARN,
         singleRun: false,
