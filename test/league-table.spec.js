@@ -37,7 +37,7 @@ describe("League table from", () => {
                 computationsManager.runJobWithInstanceManager(job.name, job.createJobParameters(params).values, {
                     onJobCompleted: (res)=>{
                         jobResult = res;
-                        console.log('res', res);
+                        // console.log('res', res);
                         done();
                     },
                     onJobFailed: (e)=>{

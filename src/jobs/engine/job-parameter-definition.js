@@ -84,12 +84,9 @@ export class JobParameterDefinition {
 
     // allValues - all values on the same level
     validateSingleValue(value, allValues) {
-        if ((value === null || value === undefined) && this.minOccurs > 0) {
-            return false
-        }
 
-        if (this.required && (!value && value !== 0 && value !== false)) {
-            return false;
+        if ((!value && value !== 0 && value !== false) && this.minOccurs > 0) {
+            return !this.required
         }
 
         if (PARAMETER_TYPE.STRING === this.type && !Utils.isString(value)) {

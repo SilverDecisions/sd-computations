@@ -4,20 +4,20 @@ import {DataModel} from "sd-model";
 import {ComputationsManager} from '../src/computations-manager'
 
 import {JobParameters} from "../src/jobs/engine/job-parameters";
+import {Utils} from "sd-utils";
 import {JobParameterDefinition, PARAMETER_TYPE} from "../src/jobs/engine/job-parameter-definition";
 
+let definition;
+let val = {};
+
+let createDefinition =  type => definition =  new JobParameterDefinition("param", type);
+let setValue = value => val[definition.name] = value;
+let validate = (value) => {
+    setValue(value);
+    return definition.validate(val[definition.name], val);
+};
 
 describe("Job paramter value of type", () => {
-
-    let definition;
-    let val = {};
-
-    let createDefinition =  type => definition =  new JobParameterDefinition("param", type);
-    let setValue = value => val[definition.name] = value;
-    let validate = (value) => {
-        setValue(value);
-        return definition.validate(val[definition.name], val);
-    };
 
     describe(PARAMETER_TYPE.STRING, function () {
 
@@ -88,7 +88,7 @@ describe("Job paramter value of type", () => {
     });
 
     describe(PARAMETER_TYPE.NUMBER, function () {
-        beforeAll(()=>createDefinition(PARAMETER_TYPE.NUMBER));
+        beforeEach(()=>createDefinition(PARAMETER_TYPE.NUMBER));
 
         it("should be valid for number", function () {
             expect(validate(123)).toBeTruthy();
@@ -155,6 +155,8 @@ describe("Job paramter value of type", () => {
         });
 
         it("should be invalid", function () {
+            expect(validate("foo")).toBeFalsy();
+
             expect(validate({
                 "string": "foo",
             })).toBeFalsy();
@@ -169,7 +171,88 @@ describe("Job paramter value of type", () => {
             })).toBeFalsy();
         });
 
-    })
+    });
 
+
+});
+
+describe("job parameter custom singleValueValidator", function () {
+    beforeEach(()=>{
+        createDefinition(PARAMETER_TYPE.NUMBER);
+        definition.set("singleValueValidator", v => v > 2)
+    });
+
+    it("should be valid", function (){
+        expect(validate(5)).toBeTruthy();
+    });
+
+    it("should be invalid", function (){
+        expect(validate(0)).toBeFalsy();
+    });
+});
+
+
+
+
+describe("required job parameter", function () {
+    beforeEach(()=>{
+        createDefinition(PARAMETER_TYPE.NUMBER);
+    });
+
+    it("should be valid when not empty", function (){
+        expect(validate(5)).toBeTruthy();
+    });
+
+    it("should be invalid when empty", function (){
+        expect(validate(null)).toBeFalsy();
+    });
+});
+
+describe("not required job parameter", function () {
+    beforeEach(()=>{
+        createDefinition(PARAMETER_TYPE.NUMBER);
+        definition.set("required", false)
+    });
+
+    it("should be valid when empty", function (){
+        expect(validate(null)).toBeTruthy();
+    });
+
+    it("should not valid if not empty", function (){
+        expect(validate(5)).toBeTruthy();
+    });
+});
+
+describe("repeating job parameter", function () {
+    beforeEach(()=>{
+        definition = new JobParameterDefinition("param", PARAMETER_TYPE.INTEGER, 2, 3);
+    });
+
+    it("should be valid", function (){
+        expect(validate([1,2])).toBeTruthy();
+        expect(validate([1,2,3])).toBeTruthy();
+    });
+
+    it("should be invalid", function (){
+        expect(validate(1)).toBeFalsy();
+        expect(validate([])).toBeFalsy();
+        expect(validate([1])).toBeFalsy();
+        expect(validate([1,2,3,4])).toBeFalsy();
+        expect(validate([1,"foo"])).toBeFalsy();
+    });
+
+    describe("custom validator", function () {
+        beforeEach(()=>{
+            definition.set("validator", values => Utils.isUnique(values, v=>v))
+        });
+
+        it("should be valid", function (){
+            expect(validate([1,2])).toBeTruthy();
+        });
+
+        it("should be invalid", function (){
+            expect(validate([1,1])).toBeFalsy();
+        });
+    });
 });
 
