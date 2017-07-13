@@ -1,5 +1,3 @@
-var istanbul = require('browserify-istanbul');
-
 module.exports = function (config) {
     config.set({
         frameworks: ['browserify','jasmine'],
