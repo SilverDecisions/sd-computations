@@ -44,7 +44,6 @@ module.exports = function (config) {
 
         browserify: {
             debug: true,
-
             "transform": [
                 [
                     "babelify",
@@ -62,17 +61,12 @@ module.exports = function (config) {
                                         "Error"
                                     ]
                                 }
-                            ]
+                            ],
+                            "istanbul"
                         ]
                     },
-                ],
-                [
-                    'browserify-istanbul',
-                    {
-                        instrumenterConfig: {
-                            embedSource: true
-                        }
-                    }]
+                ]
+
             ]
         },
 
