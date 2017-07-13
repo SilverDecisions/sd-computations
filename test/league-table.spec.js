@@ -30,11 +30,12 @@ describe("League table from", () => {
             let promiseResult;
             let promiseError;
             let jobResult;
-
+            let jobParameters;
             beforeEach(function(done) {
                 let treeRoot = data.getRoots()[0];
                 computationsManager.data = data;
-                computationsManager.runJobWithInstanceManager(job.name, job.createJobParameters(params).values, {
+                jobParameters = job.createJobParameters(params);
+                computationsManager.runJobWithInstanceManager(job.name, jobParameters.values, {
                     onJobCompleted: (res)=>{
                         jobResult = res;
                         // console.log('res', res);
@@ -56,14 +57,10 @@ describe("League table from", () => {
                 expect(promiseError).toBeFalsy()
             });
 
-            xit("csv should be correct", function() {
-                console.log('jobResult', jobResult, jobResult.data);
-                let csv2 = job.jobResultToCsvRows(jobResult.data);
-
-                console.log(csv2);
-
+            it("csv should be correct", function() {
+                let csv2 = job.jobResultToCsvRows(jobResult, jobParameters);
+                compareCsv(csv, csv2)
             });
-
 
         })
     });
@@ -75,4 +72,17 @@ function loadData(fileName){
     var o = JSON.parse(readFixtures("data/"+fileName));
     o.data = JSON.parse(readFixtures("trees/"+o.treeFile)).data;
     return o;
+}
+
+function compareCsv(csv1, csv2){
+    expect(csv1.length).toEqual(csv2.length);
+
+    csv1.forEach((row1, index)=>{
+        let row2 = csv2[index];
+        expect(row1.length).toEqual(row2.length);
+
+        row1.forEach((cell, cellIndex)=>{
+            expect(cell).toEqual(row2[cellIndex]);
+        });
+    })
 }

@@ -1,6 +1,6 @@
 {
     "csv":[
-        ["policy_id",   "policy", "criterion1", "criterion2", "dominated_by", "extended-dominated_by", "ICER"],
+        ["policy_id",   "policy", "Effect", "Cost", "dominated_by", "extended-dominated_by", "incratio"],
         [1, ":blah1", 5, -5, 3, null, null],
         [2, ":blah2", 6, -5, 3, null, null],
         [2, ":blah3", 6, -5, 3, null, null],
@@ -12,7 +12,7 @@
         [8, ":blah9", 19, 7, null, null, 5]
     ],
     "params":{
-        "ruleName": "min-max"
+        "ruleName": "max-min"
     },
     "treeFile": "mcdm.json"
 }
