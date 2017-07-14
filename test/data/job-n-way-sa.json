@@ -1,0 +1,15 @@
+{
+    "csvFile": "n-way-sa-rockefellerWithParams.csv",
+    "name": "sensitivity-analysis",
+    "params":{
+        "ruleName": "expected-value-maximization",
+        "variables": [{
+            "name": "pr",
+            "min": 0,
+            "max": 1,
+            "length": 11
+        }],
+        "extendedPolicyDescription": false
+    },
+    "treeFile": "rockefellerWithParams.json"
+}

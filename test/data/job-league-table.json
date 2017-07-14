@@ -1,6 +1,11 @@
 {
+    "name": "league-table",
+    "params":{
+        "ruleName": "max-min"
+    },
+    "treeFile": "mcdm.json",
     "csv":[
-        ["policy_id",   "policy", "Effect", "Cost", "dominated_by", "extended-dominated_by", "incratio"],
+        ["policy_id", "policy", "Effect", "Cost", "dominated_by", "extended-dominated_by", "incratio"],
         [1, ":blah1", 5, -5, 3, null, null],
         [2, ":blah2", 6, -5, 3, null, null],
         [2, ":blah3", 6, -5, 3, null, null],
@@ -10,9 +15,6 @@
         [6, ":blah7", 9, 5, null, null, 2],
         [7, ":blah8", 20, 6, 8, null, null],
         [8, ":blah9", 19, 7, null, null, 5]
-    ],
-    "params":{
-        "ruleName": "max-min"
-    },
-    "treeFile": "mcdm.json"
+    ]
+
 }

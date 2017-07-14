@@ -1,11 +1,11 @@
-import {PoliciesCollector} from '../src/policies/policies-collector'
+import {PoliciesCollector} from '../../../src/policies/policies-collector'
 import {ExpressionEngine} from "sd-expression-engine";
 import {DataModel} from "sd-model";
-import {ComputationsManager} from '../src/computations-manager'
+import {ComputationsManager} from '../../../src/computations-manager'
 
-import {JobParameters} from "../src/jobs/engine/job-parameters";
+import {JobParameters} from "../../../src/jobs/engine/job-parameters";
 import {Utils} from "sd-utils";
-import {JobParameterDefinition, PARAMETER_TYPE} from "../src/jobs/engine/job-parameter-definition";
+import {JobParameterDefinition, PARAMETER_TYPE} from "../../../src/jobs/engine/job-parameter-definition";
 
 let definition;
 let val = {};

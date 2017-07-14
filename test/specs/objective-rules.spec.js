@@ -1,4 +1,4 @@
-import {ComputationsManager} from '../src/computations-manager'
+import {ComputationsManager} from '../../src/computations-manager'
 import {DataModel} from "sd-model";
 
 

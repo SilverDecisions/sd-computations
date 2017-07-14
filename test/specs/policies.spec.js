@@ -1,4 +1,4 @@
-import {PoliciesCollector} from '../src/policies/policies-collector'
+import {PoliciesCollector} from '../../src/policies/policies-collector'
 import {ExpressionEngine} from "sd-expression-engine";
 import {DataModel} from "sd-model";
 

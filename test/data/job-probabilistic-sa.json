@@ -1,0 +1,14 @@
+{
+    "csv": true,
+    "name": "probabilistic-sensitivity-analysis",
+    "params":{
+        "ruleName": "expected-value-maximization",
+        "numberOfRuns": 3,
+        "variables": [{
+            "name": "pr",
+            "formula": "Uniform(0.1,0.9)"
+        }],
+        "extendedPolicyDescription": true
+    },
+    "treeFile": "rockefellerWithParams.json"
+}

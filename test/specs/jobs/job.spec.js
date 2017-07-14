@@ -1,44 +1,48 @@
-import {ComputationsManager} from '../src/computations-manager'
+import {ComputationsManager} from '../../../src/computations-manager'
 import {DataModel} from "sd-model";
+import {parse as csvParse} from "csv"
 
-describe("League table from", () => {
+describe("Job", () => {
 
 
     let fixtures = jasmine.getFixtures();
-
     fixtures.fixturesPath = "base/test/";
     let fileList = JSON.parse(readFixtures("data-json-filelist.json"));
 
     let computationsManager = new ComputationsManager();
-    let job = computationsManager.getJobByName("league-table");
 
+    fileList.filter(n=>n.lastIndexOf('job-', 0) === 0).forEach(function (fileName) {
+        let json = loadData(fileName);
 
+        describe(json.name+" from "+fileName+":", function(){
+            let job = computationsManager.getJobByName(json.name);
 
-    fileList.filter(n=>n.lastIndexOf('league-table', 0) === 0).forEach(function (fileName) {
-
-
-        describe(fileName+":", function(){
-            let data;
-
-            let csv;
-
-            let json = loadData(fileName);
-            data = new DataModel(json.data);
-            //console.log(data);
-            csv = json.csv;
+            let csv = json.csv;
             let params = json.params;
             let promiseResult;
             let promiseError;
             let jobResult;
             let jobParameters;
+
+
+            beforeAll(function (done) {
+                if(json.csvFile){
+                    loadCsv(json.csvFile, (c)=>{
+                        csv = c;
+                        done();
+                    })
+                }else{
+                    done();
+                }
+            });
+
             beforeEach(function(done) {
-                let treeRoot = data.getRoots()[0];
-                computationsManager.data = data;
+
+                computationsManager.data = new DataModel(json.data);
                 jobParameters = job.createJobParameters(params);
                 computationsManager.runJobWithInstanceManager(job.name, jobParameters.values, {
                     onJobCompleted: (res)=>{
                         jobResult = res;
-                        // console.log('res', res);
                         done();
                     },
                     onJobFailed: (e)=>{
@@ -57,10 +61,19 @@ describe("League table from", () => {
                 expect(promiseError).toBeFalsy()
             });
 
-            it("csv should be correct", function() {
-                let csv2 = job.jobResultToCsvRows(jobResult, jobParameters);
-                compareCsv(csv, csv2)
-            });
+            if(csv === true){
+                it("csv should be generated without errors", function() {
+                    expect(job.jobResultToCsvRows(jobResult, jobParameters)).toBeTruthy()
+
+                });
+            }else{
+                it("csv should be correct", function() {
+                    let csv2 = job.jobResultToCsvRows(jobResult, jobParameters);
+                    compareCsv(csv, csv2)
+                });
+            }
+
+
 
         })
     });
@@ -72,6 +85,12 @@ function loadData(fileName){
     var o = JSON.parse(readFixtures("data/"+fileName));
     o.data = JSON.parse(readFixtures("trees/"+o.treeFile)).data;
     return o;
+}
+
+function loadCsv(fileName, cb){
+    csvParse(readFixtures("data/csv/"+fileName), {'auto_parse': true}, function(err, rows) {
+        cb(rows)
+    })
 }
 
 function compareCsv(csv1, csv2){
