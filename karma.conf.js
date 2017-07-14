@@ -19,7 +19,7 @@ module.exports = function (config) {
             'node_modules/sd-model/dist/sd-model.js',
             'dist/sd-computations-vendor.js',
             'src/**/*.js',
-            'test/*.js',
+            'test/**/*.js',
             // JSON fixture
             { pattern:  'test/data-json-filelist.json',
                 watched:  true,
@@ -30,6 +30,10 @@ module.exports = function (config) {
                 served:   true,
                 included: false },
             { pattern:  'test/trees/*.json',
+                watched:  true,
+                served:   true,
+                included: false },
+            { pattern:  'test/data/csv/*.csv',
                 watched:  true,
                 served:   true,
                 included: false }
