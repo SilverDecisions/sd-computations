@@ -1,0 +1,25 @@
+"policy_number","policy","pr","payoff"
+1,"A:sprzedaj",0,750
+2,"A:instaluj",0,-250
+3,"A:testuj - (B:instaluj, C:instaluj)",0,-350
+4,"A:testuj - (B:instaluj, C:sprzedawaj)",0,175
+5,"A:testuj - (B:sprzedaj, C:instaluj)",0,25
+6,"A:testuj - (B:sprzedaj, C:sprzedawaj)",0,550
+1,"A:sprzedaj",0.33,750
+2,"A:instaluj",0.33,583.3333333333334
+3,"A:testuj - (B:instaluj, C:instaluj)",0.33,483.3333333333333
+4,"A:testuj - (B:instaluj, C:sprzedawaj)",0.33,775
+5,"A:testuj - (B:sprzedaj, C:instaluj)",0.33,358.3333333333333
+6,"A:testuj - (B:sprzedaj, C:sprzedawaj)",0.33,650
+1,"A:sprzedaj",0.67,750
+2,"A:instaluj",0.67,1416.6666666666667
+3,"A:testuj - (B:instaluj, C:instaluj)",0.67,1316.6666666666667
+4,"A:testuj - (B:instaluj, C:sprzedawaj)",0.67,1375
+5,"A:testuj - (B:sprzedaj, C:instaluj)",0.67,691.6666666666666
+6,"A:testuj - (B:sprzedaj, C:sprzedawaj)",0.67,750
+1,"A:sprzedaj",1,750
+2,"A:instaluj",1,2250
+3,"A:testuj - (B:instaluj, C:instaluj)",1,2150
+4,"A:testuj - (B:instaluj, C:sprzedawaj)",1,1975
+5,"A:testuj - (B:sprzedaj, C:instaluj)",1,1025
+6,"A:testuj - (B:sprzedaj, C:sprzedawaj)",1,850

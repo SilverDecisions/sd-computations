@@ -1,15 +1,38 @@
 {
-    "csvFile": "n-way-sa-rockefellerWithParams.csv",
     "name": "sensitivity-analysis",
-    "params":{
-        "ruleName": "expected-value-maximization",
-        "variables": [{
-            "name": "pr",
-            "min": 0,
-            "max": 1,
-            "length": 11
-        }],
-        "extendedPolicyDescription": false
-    },
-    "treeFile": "rockefellerWithParams.json"
+    "tests": [
+        {
+            "csvFile": "n-way-sa-rockefellerWithParams.csv",
+            "params": {
+                "ruleName": "expected-value-maximization",
+                "variables": [
+                    {
+                        "name": "pr",
+                        "min": 0,
+                        "max": 1,
+                        "length": 11
+                    }
+                ],
+                "extendedPolicyDescription": false
+            },
+            "treeFile": "rockefellerWithParams.json"
+        },
+        {
+            "csvFile": "n-way-sa-rockefellerWithParams-rounded.csv",
+            "params": {
+                "ruleName": "expected-value-maximization",
+                "roundVariables": true,
+                "variables": [
+                    {
+                        "name": "pr",
+                        "min": 0,
+                        "max": 1,
+                        "length": 4
+                    }
+                ],
+                "extendedPolicyDescription": false
+            },
+            "treeFile": "rockefellerWithParams.json"
+        }
+    ]
 }

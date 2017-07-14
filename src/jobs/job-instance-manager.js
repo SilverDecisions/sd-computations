@@ -155,6 +155,7 @@ export class JobInstanceManager extends JobExecutionListener {
             })
         }).catch(e=> {
             log.error(e);
+            return false;
         })
     }
 
