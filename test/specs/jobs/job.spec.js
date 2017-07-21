@@ -110,7 +110,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                             }else{
                                 it("csv should be correct", function() {
                                     let csv2 = job.jobResultToCsvRows(jobResult, jobParameters);
-                                    compareCsv(csv, csv2)
+                                    compareCsv(csv2, csv)
                                 });
                             }
 
@@ -155,7 +155,20 @@ function compareCsv(csv1, csv2){
         expect(row1.length).toEqual(row2.length);
 
         row1.forEach((cell, cellIndex)=>{
-            expect(cell).toEqual(row2[cellIndex]);
+            expect(getCellVal(cell)).toEqual(getCellVal(row2[cellIndex]));
         });
     })
+}
+
+function getCellVal(v){
+    if (!v && v !== false){
+        return ''
+    }
+    if(v === false){
+        return 'false'
+    }
+    if(v === true){
+        return 'true'
+    }
+    return v;
 }

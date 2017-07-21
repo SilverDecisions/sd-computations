@@ -43,7 +43,9 @@ export class CalculateStep extends Step {
                 payoffs: treeRoot.computedValue(ruleName, 'payoff').slice(),
                 dominatedBy: null,
                 extendedDominatedBy: null,
-                incratio: null
+                incratio: null,
+                optimal: false,
+                optimalForDefaultWeight: false
             }
         }).sort(compare);
 
@@ -121,23 +123,31 @@ export class CalculateStep extends Step {
         });
 
         let weightLowerBound = params.value("weightLowerBound");
+        let defaultWeight = params.value("defaultWeight");
         let weightUpperBound = params.value("weightUpperBound");
 
-        //mark optimal for weight in [weightLowerBound, weightUpperBound]
+        //mark optimal for weight in [weightLowerBound, weightUpperBound] and optimal for default Weight
         let lastLELower = null;
+        let lastLELowerDef = null;
         rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => a.incratio - b.incratio).forEach((row, i, arr)=>{
 
-            if(row.incratio <= weightLowerBound){
+            if(row.incratio < weightLowerBound){
                 lastLELower  = row;
-            }else if(row.incratio == weightLowerBound){
-                lastLELower = null;
+            }
+            if(row.incratio < defaultWeight){
+                lastLELowerDef  = row;
             }
 
             row.optimal = row.incratio >= weightLowerBound && row.incratio <= weightUpperBound;
+            row.optimalForDefaultWeight = row.incratio == defaultWeight;
 
         });
         if(lastLELower){
             lastLELower.optimal = true;
+        }
+
+        if(lastLELowerDef){
+            lastLELowerDef.optimalForDefaultWeight = true;
         }
 
         rows.forEach(row=>{
@@ -151,9 +161,9 @@ export class CalculateStep extends Step {
             payoffCoeffs : payoffCoeffs,
             rows: rows.sort((a, b)=>(a.id - b.id)),
             weightLowerBound: ExpressionEngine.toFloat(weightLowerBound),
+            defaultWeight: ExpressionEngine.toFloat(defaultWeight),
             weightUpperBound: ExpressionEngine.toFloat(weightUpperBound)
         };
-
 
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;
         return stepExecution;

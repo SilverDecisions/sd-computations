@@ -11,6 +11,9 @@ export class LeagueTableJobParameters extends JobParameters {
         this.definitions.push(new JobParameterDefinition("weightLowerBound", PARAMETER_TYPE.NUMBER_EXPRESSION).set("singleValueValidator", (v, allVals) => {
             return v >= 0 && v <= JobParameterDefinition.computeNumberExpression(allVals['weightUpperBound'])
         }));
+        this.definitions.push(new JobParameterDefinition("defaultWeight", PARAMETER_TYPE.NUMBER_EXPRESSION).set("singleValueValidator", (v, allVals) => {
+            return v >= 0 && v >= JobParameterDefinition.computeNumberExpression(allVals['weightLowerBound']) && v <= JobParameterDefinition.computeNumberExpression(allVals['weightUpperBound'])
+        }));
         this.definitions.push(new JobParameterDefinition("weightUpperBound", PARAMETER_TYPE.NUMBER_EXPRESSION).set("singleValueValidator", (v, allVals) => {
             return v >= 0 && v >= JobParameterDefinition.computeNumberExpression(allVals['weightLowerBound'])
         }));
@@ -25,6 +28,7 @@ export class LeagueTableJobParameters extends JobParameters {
             nameOfCriterion2: 'Effect',
             extendedPolicyDescription: true,
             weightLowerBound: 0,
+            defaultWeight: 0,
             weightUpperBound: Infinity,
         }
     }
