@@ -9,7 +9,7 @@ export class TornadoDiagramJob extends SimpleJob {
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
         super("tornado-diagram", jobRepository);
         this.addStep(new PrepareVariablesStep(jobRepository));
-        this.addStep(new InitPoliciesStep(jobRepository));
+        // this.addStep(new InitPoliciesStep(jobRepository));
         this.addStep(new CalculateStep(jobRepository, expressionsEvaluator, objectiveRulesManager));
     }
 
@@ -22,6 +22,7 @@ export class TornadoDiagramJob extends SimpleJob {
             validate: (data) => data.getRoots().length === 1
         }
     }
+
 
     /*Should return progress object with fields:
      * current
@@ -36,5 +37,28 @@ export class TornadoDiagramJob extends SimpleJob {
         }
 
         return this.steps[2].getProgress(execution.stepExecutions[2]);
+    }
+
+    jobResultToCsvRows(jobResult, jobParameters, withHeaders=true){
+        let result = [];
+        if(withHeaders){
+            result.push(['variable_name', 'default', "min", "max", "policy_no"]);
+        }
+
+
+        jobResult.rows.forEach(row => {
+
+            result.push(...row.extents.map((extent, policyIndex)=>[
+                row.variableName,
+                jobResult.defaultPayoff,
+                extent[0],
+                extent[1],
+                policyIndex+1
+            ]));
+
+        });
+
+
+        return result;
     }
 }

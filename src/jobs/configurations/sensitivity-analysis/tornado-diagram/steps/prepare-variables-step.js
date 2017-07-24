@@ -2,6 +2,7 @@ import {Utils} from "sd-utils";
 import {Step} from "../../../../engine/step";
 import {JOB_STATUS} from "../../../../engine/job-status";
 import {ExpressionEngine} from "sd-expression-engine";
+import {ComputationsUtils} from "../../../../../computations-utils";
 
 export class PrepareVariablesStep extends Step {
     constructor(jobRepository) {
@@ -14,27 +15,12 @@ export class PrepareVariablesStep extends Step {
 
         var variableValues = [];
         variables.forEach(v=> {
-            variableValues.push(this.sequence(v.min, v.max, v.length));
+            variableValues.push(ComputationsUtils.sequence(v.min, v.max, v.length));
         });
-        // variableValues = Utils.cartesianProductOf(variableValues);
         stepExecution.getJobExecutionContext().put("variableValues", variableValues);
 
         stepExecution.exitStatus = JOB_STATUS.COMPLETED;
         return stepExecution;
     }
 
-    sequence(min, max, length) {
-        var extent = max - min;
-        var step = extent / (length - 1);
-        var result = [min];
-        var curr = min;
-
-        for (var i = 0; i < length - 2; i++) {
-            curr += step;
-
-            result.push(ExpressionEngine.toFloat(ExpressionEngine.round(curr, 16)));
-        }
-        result.push(max);
-        return result;
-    }
 }

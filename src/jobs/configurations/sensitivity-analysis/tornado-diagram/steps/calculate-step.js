@@ -16,33 +16,40 @@ export class CalculateStep extends BatchStep {
     }
 
     init(stepExecution, jobResult) {
-        var jobExecutionContext = stepExecution.getJobExecutionContext();
-        var params = stepExecution.getJobParameters();
-        var ruleName = params.value("ruleName");
+        let jobExecutionContext = stepExecution.getJobExecutionContext();
+        let params = stepExecution.getJobParameters();
+        let ruleName = params.value("ruleName");
 
         this.objectiveRulesManager.setCurrentRuleByName(ruleName);
-        var variableValues = jobExecutionContext.get("variableValues");
-        var variableNames = params.value("variables").map(v=>v.name);
+        let variableValues = jobExecutionContext.get("variableValues");
+        let variableNames = params.value("variables").map(v=>v.name);
         stepExecution.executionContext.put("variableNames", variableNames);
-        var data = stepExecution.getData();
-        this.expressionsEvaluator.clear(data);
-        this.expressionsEvaluator.evalGlobalCode(data);
+        let data = stepExecution.getData();
 
-        var defaultValues = {};
+        let treeRoot = data.getRoots()[0];
+        let payoff = treeRoot.computedValue(ruleName, 'payoff');
+
+        this.expressionsEvaluator.clear(data);
+        this.expressionsEvaluator.evalExpressions(data);
+
+        this.objectiveRulesManager.recomputeTree(treeRoot, false);
+
+
+
+        let policiesCollector = new PoliciesCollector(treeRoot, ruleName);
+
+        let defaultValues = {};
         Utils.forOwn(data.expressionScope, (v,k)=>{
             defaultValues[k]=this.toFloat(v);
         });
 
         if(!jobResult.data){
-            var headers = ['policy'];
-            variableNames.forEach(n=>headers.push(n));
-            headers.push('payoff');
             jobResult.data = {
-                headers:headers,
-                rows: [],
                 variableNames: variableNames,
                 defaultValues: defaultValues,
-                policies: jobExecutionContext.get("policies")
+                defaultPayoff: this.toFloat(payoff)[0],
+                policies: policiesCollector.policies,
+                rows: []
             };
         }
 
@@ -51,94 +58,72 @@ export class CalculateStep extends BatchStep {
 
 
     readNextChunk(stepExecution, startIndex, chunkSize) {
-        var variableValues = stepExecution.getJobExecutionContext().get("variableValues");
+        let variableValues = stepExecution.getJobExecutionContext().get("variableValues");
         return variableValues.slice(startIndex, startIndex + chunkSize);
     }
 
-    processItem(stepExecution, item, itemIndex) {
-        var params = stepExecution.getJobParameters();
-        var ruleName = params.value("ruleName");
-        var data = stepExecution.getData();
-        var treeRoot = data.getRoots()[0];
-        var variableNames = stepExecution.executionContext.get("variableNames");
-        var variableName = variableNames[itemIndex];
+    processItem(stepExecution, item, itemIndex, jobResult) {
+        let params = stepExecution.getJobParameters();
+        let ruleName = params.value("ruleName");
+        let data = stepExecution.getData();
+        let treeRoot = data.getRoots()[0];
+        let variableNames = stepExecution.executionContext.get("variableNames");
+        let variableName = variableNames[itemIndex];
 
+        let extents = jobResult.data.policies.map(policy=>{
+            return {
+                min: Infinity,
+                max: -Infinity
+            }
+        });
+        this.expressionsEvaluator.clear(data);
+        this.expressionsEvaluator.evalGlobalCode(data);
 
-
-        var results = []
 
         item.forEach(variableValue=>{
 
-            this.expressionsEvaluator.clear(data);
-            this.expressionsEvaluator.evalGlobalCode(data);
+
 
             data.expressionScope[variableName] = variableValue;
 
             this.expressionsEvaluator.evalExpressionsForNode(data, treeRoot);
-            var vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
-            var valid = vr.isValid();
+            let vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
+            let valid = vr.isValid();
 
             if(!valid) {
                 return null;
             }
 
-            this.objectiveRulesManager.recomputeTree(treeRoot, false);
-            var policiesCollector = new PoliciesCollector(treeRoot, ruleName);
-            var policies = policiesCollector.policies;
+            jobResult.data.policies.forEach((policy, policyIndex)=>{
+                this.objectiveRulesManager.recomputeTree(treeRoot, false, policy);
+                let payoff = treeRoot.computedValue(ruleName, 'payoff')[0];
 
-            var payoff = treeRoot.computedValue(ruleName, 'payoff');
+                if(payoff < extents[policyIndex].min){
+                    extents[policyIndex].min = payoff
+                }
 
+                if(payoff > extents[policyIndex].max){
+                    extents[policyIndex].max = payoff
+                }
+            });
 
-            var r = {
-                policies: policies,
-                variableName: variableName,
-                variableIndex: itemIndex,
-                variableValue: variableValue,
-                payoff: payoff
-            };
-            results.push(r)
         });
 
-        return results;
+        return {
+            variableName: variableName,
+            variableIndex: itemIndex,
+            extents: extents.map(e=>[this.toFloat(e.min), this.toFloat(e.max)]
+            )
+        };
 
     }
 
     writeChunk(stepExecution, items, jobResult) {
-        var params = stepExecution.getJobParameters();
+        jobResult.data.rows.push(...items);
+    }
 
-        var policyByKey = stepExecution.getJobExecutionContext().get("policyByKey");
-        var policies = stepExecution.getJobExecutionContext().get("policies");
-
-        items.forEach(itemsWrapper=>{
-            if(!itemsWrapper){
-                return;
-            }
-
-            itemsWrapper.forEach(item=>{
-                item.policies.forEach((policy)=>{
-
-                    var rowCells = [Policy.toPolicyString(policy)];
-                    jobResult.data.variableNames.forEach((v)=>{
-                        var value = "default";
-                        if(v == item.variableName){
-                            value = this.toFloat(item.variableValue);
-                        }else if(jobResult.data.defaultValues.hasOwnProperty(v)){
-                            value = jobResult.data.defaultValues[v];
-                        }
-                        rowCells.push(value)
-                    });
-                    var payoff = item.payoff;
-                    rowCells.push(Utils.isString(payoff)? payoff: this.toFloat(payoff));
-                    var row = {
-                        cells: rowCells,
-                        policyIndex: policies.indexOf(policyByKey[policy.key]),
-                    };
-                    jobResult.data.rows.push(row);
-                })
-            })
-
-
-        })
+    postProcess(stepExecution, jobResult) {
+        jobResult.data.rows.sort((a, b)=>(b.extents[0].max-b.extents[0].min)-(a.extents[0].max-a.extents[0].min))
     }
 
 

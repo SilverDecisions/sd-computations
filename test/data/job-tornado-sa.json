@@ -1,0 +1,32 @@
+{
+    "name": "tornado-diagram",
+    "tests": [
+        {
+            "csvFile": "tornado-sa-rockefellerWithParams.csv",
+            "params": {
+                "ruleName": "expected-value-maximization",
+                "variables": [
+                    {
+                        "name": "pr",
+                        "min": 0,
+                        "max": 1,
+                        "length": 11
+                    },
+                    {
+                        "name": "sens",
+                        "min": 0,
+                        "max": 1,
+                        "length": 11
+                    },
+                    {
+                        "name": "spec",
+                        "min": 0.1,
+                        "max": 0.9,
+                        "length": 9
+                    }
+                ]
+            },
+            "treeFile": "rockefellerWithParamsNoRandom.json"
+        }
+    ]
+}

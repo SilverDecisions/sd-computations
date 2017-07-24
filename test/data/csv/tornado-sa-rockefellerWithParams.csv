@@ -1,0 +1,4 @@
+"variable_name","default","min","max","policy_no"
+"pr",1075,175,1975,1
+"sens",1075,287.5,1162.5,1
+"spec",1075,850,1150,1
