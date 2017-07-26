@@ -7,13 +7,13 @@
                 "ruleName": "expected-value-maximization",
                 "variables": [
                     {
-                        "name": "pr",
+                        "name": "sens",
                         "min": 0,
                         "max": 1,
                         "length": 11
                     },
                     {
-                        "name": "sens",
+                        "name": "pr",
                         "min": 0,
                         "max": 1,
                         "length": 11

@@ -1,6 +1,5 @@
 import {SimpleJob} from "../../../engine/simple-job";
 import {PrepareVariablesStep} from "./steps/prepare-variables-step";
-import {InitPoliciesStep} from "./steps/init-policies-step";
 import {CalculateStep} from "./steps/calculate-step";
 import {TornadoDiagramJobParameters} from "./tornado-diagram-job-parameters";
 
@@ -9,7 +8,6 @@ export class TornadoDiagramJob extends SimpleJob {
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
         super("tornado-diagram", jobRepository);
         this.addStep(new PrepareVariablesStep(jobRepository));
-        // this.addStep(new InitPoliciesStep(jobRepository));
         this.addStep(new CalculateStep(jobRepository, expressionsEvaluator, objectiveRulesManager));
     }
 
@@ -29,14 +27,14 @@ export class TornadoDiagramJob extends SimpleJob {
      * total */
     getProgress(execution){
 
-        if (execution.stepExecutions.length <= 2) {
+        if (execution.stepExecutions.length <= 1) {
             return {
                 total: 1,
                 current: 0
             };
         }
 
-        return this.steps[2].getProgress(execution.stepExecutions[2]);
+        return this.steps[1].getProgress(execution.stepExecutions[1]);
     }
 
     jobResultToCsvRows(jobResult, jobParameters, withHeaders=true){

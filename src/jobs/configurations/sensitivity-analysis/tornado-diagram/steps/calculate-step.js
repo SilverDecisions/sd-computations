@@ -82,8 +82,6 @@ export class CalculateStep extends BatchStep {
 
         item.forEach(variableValue=>{
 
-
-
             data.expressionScope[variableName] = variableValue;
 
             this.expressionsEvaluator.evalExpressionsForNode(data, treeRoot);
@@ -112,8 +110,7 @@ export class CalculateStep extends BatchStep {
         return {
             variableName: variableName,
             variableIndex: itemIndex,
-            extents: extents.map(e=>[this.toFloat(e.min), this.toFloat(e.max)]
-            )
+            extents: extents.map(e=>[this.toFloat(e.min), this.toFloat(e.max)])
         };
 
     }
@@ -123,7 +120,8 @@ export class CalculateStep extends BatchStep {
     }
 
     postProcess(stepExecution, jobResult) {
-        jobResult.data.rows.sort((a, b)=>(b.extents[0].max-b.extents[0].min)-(a.extents[0].max-a.extents[0].min))
+        jobResult.data.rows.sort((a, b)=>(b.extents[0][1]-b.extents[0][0])-(a.extents[0][1]-a.extents[0][0]))
+
     }
 
 
