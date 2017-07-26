@@ -14,12 +14,14 @@ export class TornadoDiagramJobParameters extends JobParameters {
             ], 1, Infinity, false,
             v => v["min"] <= v["max"],
             values => Utils.isUnique(values, v=>v["name"]) //Variable names should be unique
-        ))
+        ));
+        this.definitions.push(new JobParameterDefinition("failOnInvalidTree", PARAMETER_TYPE.BOOLEAN));
     }
 
     initDefaultValues() {
         this.values = {
             id: Utils.guid(),
+            failOnInvalidTree: true
         }
     }
 }

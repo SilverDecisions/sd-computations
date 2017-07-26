@@ -1,6 +1,6 @@
 import {Utils} from "sd-utils";
 import {ExpressionEngine} from "sd-expression-engine";
-
+import {JobComputationException} from "../../../../engine/exceptions/job-computation-exception";
 import {BatchStep} from "../../../../engine/batch/batch-step";
 import {TreeValidator} from "../../../../../validation/tree-validator";
 import {Policy} from "../../../../../policies/policy";
@@ -65,6 +65,7 @@ export class CalculateStep extends BatchStep {
     processItem(stepExecution, item, itemIndex, jobResult) {
         let params = stepExecution.getJobParameters();
         let ruleName = params.value("ruleName");
+        let failOnInvalidTree = params.value("failOnInvalidTree");
         let data = stepExecution.getData();
         let treeRoot = data.getRoots()[0];
         let variableNames = stepExecution.executionContext.get("variableNames");
@@ -76,6 +77,14 @@ export class CalculateStep extends BatchStep {
                 max: -Infinity
             }
         });
+
+        let values = jobResult.data.policies.map(policy=>{
+            return {
+                min: null,
+                max: null
+            }
+        });
+
         this.expressionsEvaluator.clear(data);
         this.expressionsEvaluator.evalGlobalCode(data);
 
@@ -88,8 +97,13 @@ export class CalculateStep extends BatchStep {
             let vr = this.treeValidator.validate(data.getAllNodesInSubtree(treeRoot));
             let valid = vr.isValid();
 
-            if(!valid) {
-                return null;
+            if(!valid && failOnInvalidTree){
+                let errorData = {
+                    variables: {}
+                };
+                errorData.variables[variableName] = variableValue;
+
+                throw new JobComputationException("computations", errorData)
             }
 
             jobResult.data.policies.forEach((policy, policyIndex)=>{
@@ -97,11 +111,13 @@ export class CalculateStep extends BatchStep {
                 let payoff = treeRoot.computedValue(ruleName, 'payoff')[0];
 
                 if(payoff < extents[policyIndex].min){
-                    extents[policyIndex].min = payoff
+                    extents[policyIndex].min = payoff;
+                    values[policyIndex].min = variableValue
                 }
 
                 if(payoff > extents[policyIndex].max){
-                    extents[policyIndex].max = payoff
+                    extents[policyIndex].max = payoff;
+                    values[policyIndex].max = variableValue
                 }
             });
 
@@ -110,7 +126,8 @@ export class CalculateStep extends BatchStep {
         return {
             variableName: variableName,
             variableIndex: itemIndex,
-            extents: extents.map(e=>[this.toFloat(e.min), this.toFloat(e.max)])
+            extents: extents.map(e=>[this.toFloat(e.min), this.toFloat(e.max)]),
+            extentVariableValues: values.map(v=>[this.toFloat(v.min), this.toFloat(v.max)])
         };
 
     }

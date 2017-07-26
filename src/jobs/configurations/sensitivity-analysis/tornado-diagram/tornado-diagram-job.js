@@ -40,14 +40,17 @@ export class TornadoDiagramJob extends SimpleJob {
     jobResultToCsvRows(jobResult, jobParameters, withHeaders=true){
         let result = [];
         if(withHeaders){
-            result.push(['variable_name', 'default', "min", "max", "policy_no"]);
+            result.push(['variable_name', 'default_var_value', "min_var_value", "max_var_value", 'default_payoff', "min_payoff", "max_payoff", "policy_no"]);
         }
 
 
-        jobResult.rows.forEach(row => {
+        jobResult.rows.forEach((row, index) => {
 
             result.push(...row.extents.map((extent, policyIndex)=>[
                 row.variableName,
+                jobResult.defaultValues[row.variableName],
+                row.extentVariableValues[policyIndex][0],
+                row.extentVariableValues[policyIndex][1],
                 jobResult.defaultPayoff,
                 extent[0],
                 extent[1],
