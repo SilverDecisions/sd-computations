@@ -1,0 +1,19 @@
+{
+    "name": "spider-plot",
+    "tests": [
+        {
+            "csvFile": "spider-sa-rockefellerWithParams.csv",
+            "params": {
+                "ruleName": "expected-value-maximization",
+                "percentageChangeRange": 100,
+                "length": 11,
+                "variables": [
+                    {
+                        "name": "pr"
+                    }
+                ]
+            },
+            "treeFile": "rockefellerWithParamsNoRandom.json"
+        }
+    ]
+}

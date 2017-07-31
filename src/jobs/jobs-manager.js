@@ -13,6 +13,7 @@ import {TornadoDiagramJob} from "./configurations/sensitivity-analysis/tornado-d
 import {JOB_STATUS} from "./engine/job-status";
 import {SimpleJobRepository} from "./engine/job-repository/simple-job-repository";
 import {LeagueTableJob} from "./configurations/league-table/league-table-job";
+import {SpiderPlotJob} from "./configurations/sensitivity-analysis/spider-plot/spider-plot-job";
 
 
 export class JobsManagerConfig {
@@ -203,6 +204,7 @@ export class JobsManager extends JobExecutionListener {
         this.registerJob(probabilisticSensitivityAnalysisJob);
         this.registerJob(new RecomputeJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
         this.registerJob(new LeagueTableJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
+        this.registerJob(new SpiderPlotJob(this.jobRepository, this.expressionsEvaluator, this.objectiveRulesManager));
     }
 
     registerJob(job) {
