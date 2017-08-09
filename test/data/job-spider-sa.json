@@ -6,7 +6,7 @@
             "params": {
                 "ruleName": "expected-value-maximization",
                 "percentageChangeRange": 100,
-                "length": 11,
+                "length": 5,
                 "variables": [
                     {
                         "name": "pr"

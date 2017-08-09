@@ -45,7 +45,7 @@ export class CalculateStep extends BatchStep {
         });
 
 
-        let percentageRangeValues = ComputationsUtils.sequence(-percentageChangeRange, percentageChangeRange, length);
+        let percentageRangeValues = ComputationsUtils.sequence(-percentageChangeRange, percentageChangeRange, 2*length+1);
 
         let variableValues = [];
 

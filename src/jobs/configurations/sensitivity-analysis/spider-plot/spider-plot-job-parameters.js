@@ -7,7 +7,7 @@ export class SpiderPlotJobParameters extends JobParameters {
         this.definitions.push(new JobParameterDefinition("id", PARAMETER_TYPE.STRING, 1, 1, true));
         this.definitions.push(new JobParameterDefinition("ruleName", PARAMETER_TYPE.STRING));
         this.definitions.push(new JobParameterDefinition("percentageChangeRange", PARAMETER_TYPE.NUMBER).set("singleValueValidator", v => v > 0 && v <=100));
-        this.definitions.push(new JobParameterDefinition("length", PARAMETER_TYPE.INTEGER).set("singleValueValidator", v => v >= 0 && v % 2)); //length should be odd
+        this.definitions.push(new JobParameterDefinition("length", PARAMETER_TYPE.INTEGER).set("singleValueValidator", v => v >= 0));
         this.definitions.push(new JobParameterDefinition("variables", [
                 new JobParameterDefinition("name", PARAMETER_TYPE.STRING),
             ], 1, Infinity, false,
