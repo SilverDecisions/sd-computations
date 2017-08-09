@@ -47,6 +47,7 @@ export class CalculateStep extends BatchStep {
             jobResult.data = {
                 variableNames: variableNames,
                 defaultValues: defaultValues,
+                variableExtents: variableValues.map(v=>[v[0], v[v.length-1]]),
                 defaultPayoff: this.toFloat(payoff)[0],
                 policies: policiesCollector.policies,
                 rows: []
