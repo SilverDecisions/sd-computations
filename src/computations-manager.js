@@ -219,8 +219,16 @@ export class ComputationsManager {
                 return this.displayPolicyForNode(childEdge.childNode, policy)
             }
             return;
+        } else if(node instanceof model.ChanceNode){
+            node.displayValue('optimal', true);
+            node.childEdges.forEach(e=>{
+                e.displayValue('optimal', true);
+                this.displayPolicyForNode(e.childNode, policy)
+            })
+        }else if(node instanceof model.TerminalNode){
+            node.displayValue('optimal', true);
         }
 
-        node.childEdges.forEach(e=>this.displayPolicyForNode(e.childNode, policy))
+
     }
 }
