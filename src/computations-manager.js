@@ -123,6 +123,11 @@ export class ComputationsManager {
         return this.operationsManager.operationsForObject(object);
     }
 
+    /* alias function for checkValidityAndRecomputeObjective*/
+    recompute(){
+        return this.checkValidityAndRecomputeObjective(...arguments);
+    }
+
     checkValidityAndRecomputeObjective(allRules, evalCode = false, evalNumeric = true) {
         return Promise.resolve().then(()=> {
             if (this.config.worker.delegateRecomputation) {

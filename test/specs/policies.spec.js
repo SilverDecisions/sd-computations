@@ -1,10 +1,9 @@
 import {PoliciesCollector} from '../../src/policies/policies-collector'
-import {ExpressionEngine} from "sd-expression-engine";
 import {DataModel} from "sd-model";
 
 describe("Policies from", () => {
 
-    let expressionEngine = new ExpressionEngine();
+
 
     let fixtures = jasmine.getFixtures();
 

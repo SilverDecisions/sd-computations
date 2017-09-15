@@ -36,7 +36,7 @@ for(var k in p.dependencies){
 
 var projectName= "sd-computations";
 var standaloneName= "SilverDecisions.Computations";
-gulp
+
 gulp.task('clean', function (cb) {
     return del(['tmp', 'dist'], cb);
 });
