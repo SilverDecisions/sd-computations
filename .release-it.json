@@ -1,0 +1,10 @@
+{
+  "non-interactive": false,
+  "increment": "patch",
+  "preReleaseId": null,
+  "buildCommand": "gulp",
+  "changelogCommand": "git log --pretty=format:\"* %s (%h)\" [REV_RANGE]",
+  "npm": {
+    "publish": true
+  }
+}

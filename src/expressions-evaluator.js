@@ -51,6 +51,13 @@ export class ExpressionsEvaluator {
         }
     }
 
+    evalPayoff(edge, index = 0) {
+        if (ExpressionEngine.hasAssignmentExpression(edge.payoff[index])) {
+            return null;
+        }
+        return this.expressionEngine.eval(edge.payoff[index], true, edge.parentNode.expressionScope);
+    }
+
     evalExpressionsForNode(data, node, evalCode=true, evalNumeric=true, initScope=false) {
         if(!node.expressionScope || initScope || evalCode){
             this.initScopeForNode(data, node);
@@ -79,7 +86,7 @@ export class ExpressionsEvaluator {
                     let path = 'payoff[' + payoffIndex + ']';
                     if(e.isFieldValid(path, true, false)){
                         try{
-                            e.computedValue(null, path, this.expressionEngine.evalPayoff(e, payoffIndex))
+                            e.computedValue(null, path, this.evalPayoff(e, payoffIndex))
                         }catch (err){
                             //   Left empty intentionally
                         }
