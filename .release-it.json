@@ -1,8 +1,9 @@
 {
   "non-interactive": false,
+
   "increment": "patch",
   "preReleaseId": null,
-  "buildCommand": "gulp",
+  "buildCommand": "ncu -u --packageFile package.json sd-utils sd-model sd-random sd-expression-engine sd-tree-designer && npm update sd-utils sd-model sd-random sd-expression-engine sd-tree-designer && gulp",
   "changelogCommand": "git log --pretty=format:\"* %s (%h)\" [REV_RANGE]",
   "npm": {
     "publish": true

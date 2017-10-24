@@ -124,7 +124,7 @@ function buildJsDependencies(jsFileName, moduleNames, dest, failOnError){
 
 function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
     var pipe = b
-        .transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["babel-plugin-transform-builtin-extend", {globals: ["Error"]}]]})
+        .transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["transform-builtin-extend", {globals: ["Error"]}]]})
         .bundle();
     if(!failOnError){
         pipe = pipe.on('error', map_error )
