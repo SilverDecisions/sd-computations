@@ -3,7 +3,6 @@ module.exports = function (config) {
         frameworks: ['browserify','jasmine'],
         plugins: [
             'karma-browserify',
-            'karma-phantomjs-launcher',
             'karma-chrome-launcher',
             'karma-firefox-launcher',
             'karma-jasmine',

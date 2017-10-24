@@ -128,6 +128,13 @@ export class ComputationsManager {
         return this.checkValidityAndRecomputeObjective(...arguments);
     }
 
+    /**
+     * Checks validity of data model and recomputes objective rules
+     * @returns promise
+     * @param allRules - recompute all objective rules (bool)
+     * @param evalCode - evaluate code
+     * @param evalNumeric - evaluate numeric expressions
+     */
     checkValidityAndRecomputeObjective(allRules, evalCode = false, evalNumeric = true) {
         return Promise.resolve().then(()=> {
             if (this.config.worker.delegateRecomputation) {
