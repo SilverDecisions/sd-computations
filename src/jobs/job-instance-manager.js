@@ -138,8 +138,10 @@ export class JobInstanceManager extends JobExecutionListener {
             return this.jobsManger.run(this.jobInstance.jobName, this.lastJobExecution.jobParameters.values, this.lastJobExecution.getData()).then(je=> {
                 this.lastJobExecution = je;
                 this.checkProgress();
+                return true;
             }).catch(e=> {
                 log.error(e);
+                return false;
             })
         })
     }
