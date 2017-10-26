@@ -15,7 +15,9 @@ export class ComputationsEngineConfig extends ComputationsManagerConfig{
     }
 }
 
-//Entry point class for standalone computation workers
+/**
+ * Entry point class for standalone computation workers
+ */
 export class ComputationsEngine extends ComputationsManager{
 
     global = Utils.getGlobalObject();

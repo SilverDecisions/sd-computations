@@ -5,8 +5,11 @@ import {JobParametersInvalidException} from "./exceptions/job-parameters-invalid
 import {JobDataInvalidException} from "./exceptions/job-data-invalid-exception";
 import {JOB_EXECUTION_FLAG} from "./job-execution-flag";
 import {JobResult} from "./job-result";
-/*Base class for jobs*/
-//A Job is an entity that encapsulates an entire job process ( an abstraction representing the configuration of a job).
+
+/**
+ * Base class for jobs
+ * A Job is an entity that encapsulates an entire job process ( an abstraction representing the configuration of a job)
+ * */
 
 export class Job {
 

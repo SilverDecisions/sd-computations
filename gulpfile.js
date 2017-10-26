@@ -154,7 +154,7 @@ function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
 }
 
 gulp.task('default',  function(cb) {
-    runSequence('build-clean', 'test', cb);
+    runSequence('build-clean', 'test', 'doc', cb);
 });
 
 var onError = function (err) {
@@ -187,3 +187,10 @@ function map_error(err) {
 
     this.emit('end');
 }
+
+
+gulp.task('doc', function () {
+    return gulp.src('./src/computations-manager.js')
+        .pipe(plugins.documentation('md', {shallow: true}))
+        .pipe(gulp.dest('doc'));
+});
