@@ -8,7 +8,7 @@ self.onmessage = function(oEvent) { //hack to get browserify bundle script src
     importScripts('/base/node_modules/sd-model/dist/sd-model.js');
     console.log('received browserifyBundleSrc', oEvent.data);
     importScripts(oEvent.data);
-    var computationsModule = require("/home/michal/dev/sgh/sd/sd-computations/src/computations-engine.js")
+    var computationsModule = require("sd-computations");
     // console.log(computationsModule)
     var engine = new computationsModule.ComputationsEngine();
     engine.reply("worker_loaded")

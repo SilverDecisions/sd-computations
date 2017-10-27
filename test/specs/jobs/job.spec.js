@@ -40,9 +40,9 @@ computationManagerConfigs.forEach(mangerConf=>{
         beforeAll((done)=>{
             //hack to get generated browserify bundle script src and pass it to worker
             if(mangerConf.config.worker && mangerConf.config.worker.url && computationsManager.jobsManger.jobWorker){
-                let browserifyBundleSrc = $("script").filter(function() {
-                    return this.src.match(/.+\.browserify.*/);
-                }).first().attr('src');
+
+                let browserifyBundleSrc = findScriptSrc(/.+\.browserify.*/);
+
                 // let browserifyBundleSrc = $("script:regex(src, .+\.browserify.*)").attr('src');
                 console.log('browserifyBundleSrc', browserifyBundleSrc);
                 computationsManager.jobsManger.jobWorker.addListener("worker_loaded", ()=>{
@@ -54,7 +54,7 @@ computationManagerConfigs.forEach(mangerConf=>{
             }else{
                 done();
             }
-        }, 15000);
+        }, 5000);
 
 
         describe("Job", () => {
@@ -116,7 +116,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     promiseError = e;
                                     done();
                                 })
-                            }, 5000);
+                            }, 1000);
 
                             it("job execution should not have errors", function() {
                                 expect(promiseError).toBeFalsy()
@@ -191,4 +191,10 @@ function getCellVal(v){
         return 'true'
     }
     return v;
+}
+
+function findScriptSrc(regex){
+    return $("script").filter(function() {
+        return this.src.match(regex);
+    }).first().attr('src');
 }

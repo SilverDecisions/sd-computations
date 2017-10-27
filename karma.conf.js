@@ -1,5 +1,5 @@
 var p = require('./package.json');
-
+var projectName= "sd-computations";
 var dependencies = [];
 var vendorDependencies = [];
 var sdDependencies = [];
@@ -69,7 +69,8 @@ module.exports = function (config) {
             debug: true,
             configure: function(bundle) {
                 bundle.on('prebundle', function() {
-                    bundle.external(dependencies);
+                    bundle.require('./index.js', {expose: projectName} )
+                        .external(dependencies);
                 });
             },
             "transform": [
