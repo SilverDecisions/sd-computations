@@ -44,7 +44,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                     return this.src.match(/.+\.browserify.*/);
                 }).first().attr('src');
                 // let browserifyBundleSrc = $("script:regex(src, .+\.browserify.*)").attr('src');
-                // console.log('browserifyBundleSrc', browserifyBundleSrc)
+                console.log('browserifyBundleSrc', browserifyBundleSrc);
                 computationsManager.jobsManger.jobWorker.addListener("worker_loaded", ()=>{
                     // console.log("worker_loaded received");
                     done();
@@ -116,7 +116,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     promiseError = e;
                                     done();
                                 })
-                            }, 15000);
+                            }, 5000);
 
                             it("job execution should not have errors", function() {
                                 expect(promiseError).toBeFalsy()
@@ -143,7 +143,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     done();
                                 })
 
-                            }, 15000);
+                            }, 5000);
                         });
 
                     })
