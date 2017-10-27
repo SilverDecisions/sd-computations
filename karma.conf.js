@@ -114,6 +114,8 @@ module.exports = function (config) {
                 {'type': 'html', dir: 'coverage'},
                 {'type': 'lcov'}
             ]
-        }
+        },
+        browserDisconnectTolerance: 2,
+        browserNoActivityTimeout: 50000
     });
 };
