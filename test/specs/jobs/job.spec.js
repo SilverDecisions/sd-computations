@@ -54,7 +54,7 @@ computationManagerConfigs.forEach(mangerConf=>{
             }else{
                 done();
             }
-        }, 5000);
+        }, 15000);
 
 
         describe("Job", () => {
@@ -116,7 +116,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     promiseError = e;
                                     done();
                                 })
-                            }, 5000);
+                            }, 15000);
 
                             it("job execution should not have errors", function() {
                                 expect(promiseError).toBeFalsy()
@@ -143,7 +143,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     done();
                                 })
 
-                            });
+                            }, 15000);
                         });
 
                     })
