@@ -74,7 +74,10 @@ export class ComputationsEngine extends ComputationsManager{
 
     setConfig(config) {
         super.setConfig(config);
-        this.setLogLevel(this.config.logLevel);
+        if(this.config.logLevel){
+            this.setLogLevel(this.config.logLevel);
+        }
+
         return this;
     }
 

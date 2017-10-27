@@ -1,3 +1,19 @@
+var p = require('./package.json');
+
+var dependencies = [];
+var vendorDependencies = [];
+var sdDependencies = [];
+for(var k in p.dependencies){
+    if(p.dependencies.hasOwnProperty(k)){
+        dependencies.push(k);
+        if(k.trim().startsWith("sd-")){
+            sdDependencies.push(k)
+        }else{
+            vendorDependencies.push(k)
+        }
+    }
+}
+
 module.exports = function (config) {
     config.set({
         frameworks: ['browserify','jasmine'],
@@ -18,7 +34,7 @@ module.exports = function (config) {
             'node_modules/sd-model/dist/sd-model.js',
             'dist/sd-computations-vendor.js',
             'src/**/*.js',
-            'test/**/*.js',
+            'test/specs/**/*.js',
             // JSON fixture
             { pattern:  'test/data-json-filelist.json',
                 watched:  true,
@@ -35,16 +51,27 @@ module.exports = function (config) {
             { pattern:  'test/data/csv/*.csv',
                 watched:  true,
                 served:   true,
+                included: false },
+            { pattern:  'test/job-worker.worker.js',
+                watched:  true,
+                served:   true,
                 included: false }
         ],
 
         preprocessors: {
             'src/**/*.js': ['browserify'],
-            'test/**/*.js': ['browserify']
+            'test/specs/**/*.js': ['browserify'],
+            // 'test/job-worker.worker.js': ['browserify'],
         },
 
         browserify: {
+
             debug: true,
+            configure: function(bundle) {
+                bundle.on('prebundle', function() {
+                    bundle.external(dependencies);
+                });
+            },
             "transform": [
                 [
                     "babelify",

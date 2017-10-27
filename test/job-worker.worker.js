@@ -1,0 +1,15 @@
+
+self.onmessage = function(oEvent) { //hack to get browserify bundle script src
+
+    importScripts('/base/dist/sd-computations-vendor.js');
+    importScripts('/base/node_modules/sd-utils/dist/sd-utils.js');
+    importScripts('/base/node_modules/sd-random/dist/sd-random.js');
+    importScripts('/base/node_modules/sd-expression-engine/dist/sd-expression-engine.js');
+    importScripts('/base/node_modules/sd-model/dist/sd-model.js');
+    importScripts(oEvent.data);
+    var computationsModule = require("/home/michal/dev/sgh/sd/sd-computations/src/computations-engine.js")
+    // console.log(computationsModule)
+    var engine = new computationsModule.ComputationsEngine();
+    engine.reply("worker_loaded")
+};
+

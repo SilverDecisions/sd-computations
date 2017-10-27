@@ -9,14 +9,14 @@ let computationManagerConfigs = [
         "name": "IDB job repository without worker",
         "config":{}
     },
-    /*{
+    {
         "name": "IDB with worker",
         "config":{
             "worker": {
                 "url": "/base/test/job-worker.worker.js"
             }
         }
-    },*/
+    },
     {
         "name": "timeout job repository",
         "config":{
@@ -36,6 +36,26 @@ computationManagerConfigs.forEach(mangerConf=>{
 
     describe("Computation manger config ["+mangerConf.name+"] - ",  () => {
         let computationsManager = new ComputationsManager(mangerConf.config);
+
+        beforeAll((done)=>{
+            //hack to get generated browserify bundle script src and pass it to worker
+            if(mangerConf.config.worker && mangerConf.config.worker.url && computationsManager.jobsManger.jobWorker){
+                let browserifyBundleSrc = $("script").filter(function() {
+                    return this.src.match(/.+\.browserify.*/);
+                }).first().attr('src');
+                // let browserifyBundleSrc = $("script:regex(src, .+\.browserify.*)").attr('src');
+                // console.log('browserifyBundleSrc', browserifyBundleSrc)
+                computationsManager.jobsManger.jobWorker.addListener("worker_loaded", ()=>{
+                    // console.log("worker_loaded received");
+                    done();
+                });
+
+                computationsManager.jobsManger.jobWorker.postMessage(browserifyBundleSrc)
+            }else{
+                done();
+            }
+        }, 5000);
+
 
         describe("Job", () => {
 
@@ -96,7 +116,7 @@ computationManagerConfigs.forEach(mangerConf=>{
                                     promiseError = e;
                                     done();
                                 })
-                            });
+                            }, 5000);
 
                             it("job execution should not have errors", function() {
                                 expect(promiseError).toBeFalsy()
