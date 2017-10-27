@@ -6,6 +6,7 @@ self.onmessage = function(oEvent) { //hack to get browserify bundle script src
     importScripts('/base/node_modules/sd-random/dist/sd-random.js');
     importScripts('/base/node_modules/sd-expression-engine/dist/sd-expression-engine.js');
     importScripts('/base/node_modules/sd-model/dist/sd-model.js');
+    console.log('received browserifyBundleSrc', oEvent.data);
     importScripts(oEvent.data);
     var computationsModule = require("/home/michal/dev/sgh/sd/sd-computations/src/computations-engine.js")
     // console.log(computationsModule)
