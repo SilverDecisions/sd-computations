@@ -5,7 +5,7 @@ export class RecomputeJobParameters extends JobParameters {
 
     initDefinitions() {
         this.definitions.push(new JobParameterDefinition("id", PARAMETER_TYPE.STRING, 1, 1, true));
-        this.definitions.push(new JobParameterDefinition("ruleName", PARAMETER_TYPE.STRING, 0));
+        this.definitions.push(new JobParameterDefinition("ruleName", PARAMETER_TYPE.STRING).set('required', false));
         this.definitions.push(new JobParameterDefinition("evalCode", PARAMETER_TYPE.BOOLEAN));
         this.definitions.push(new JobParameterDefinition("evalNumeric", PARAMETER_TYPE.BOOLEAN));
     }

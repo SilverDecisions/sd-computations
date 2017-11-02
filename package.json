@@ -92,7 +92,7 @@
   "dependencies": {
     "idb": "^2.0.4",
     "sd-expression-engine": "0.1.10",
-    "sd-model": "0.2.4",
+    "sd-model": "0.2.5",
     "sd-utils": "0.1.9",
     "sd-random": "0.1.1"
   }
