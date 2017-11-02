@@ -26,4 +26,8 @@ export class OperationsManager {
         return this.operations.filter(op=>op.isApplicable(object))
     }
 
+    setData(data){
+        this.data = data;
+        this.operations.forEach(o => o.data = data)
+    }
 }

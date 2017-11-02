@@ -93,6 +93,11 @@ export class ComputationsManager {
         return this;
     }
 
+    setData(data){
+        this.data = data;
+        this.operationsManager.setData(data);
+    }
+
 
     /** Alias function for checkValidityAndRecomputeObjective*/
     recompute(){

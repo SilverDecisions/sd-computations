@@ -4,7 +4,7 @@ import {parse as csvParse} from "csv"
 
 
 let fixtures = jasmine.getFixtures();
-fixtures.fixturesPath = "base/test/";
+
 let fileName = 'job-n-way-sa.json';
 
 
@@ -44,7 +44,7 @@ describe("Job", () => {
 
         beforeAll(function (done) {
 
-            computationsManager.data = new DataModel(testConf.data);
+            computationsManager.setData(new DataModel(testConf.data));
             jobParameters = job.createJobParameters(params);
             computationsManager.runJobWithInstanceManager(job.name, jobParameters.values, {
                 onJobStarted: () => {
@@ -137,11 +137,13 @@ describe("Job", () => {
 
 
 function loadData(fileName) {
+    fixtures.fixturesPath = "base/test/";
     return JSON.parse(readFixtures("data/" + fileName));
 }
 
 
 function loadCsv(fileName, cb) {
+    fixtures.fixturesPath = "base/test/";
     csvParse(readFixtures("data/csv/" + fileName), {'auto_parse': true}, function (err, rows) {
         cb(rows)
     })

@@ -31,6 +31,7 @@ let computationManagerConfigs = [
     }
 ];
 
+let fixtures = jasmine.getFixtures();
 
 computationManagerConfigs.forEach(mangerConf=>{
 
@@ -60,7 +61,7 @@ computationManagerConfigs.forEach(mangerConf=>{
         describe("Job", () => {
 
 
-            let fixtures = jasmine.getFixtures();
+
             fixtures.fixturesPath = "base/test/";
             let fileList = JSON.parse(readFixtures("data-json-filelist.json"));
 
@@ -98,7 +99,7 @@ computationManagerConfigs.forEach(mangerConf=>{
 
                             beforeAll(function(done) {
 
-                                computationsManager.data = new DataModel(testConf.data);
+                                computationsManager.setData(new DataModel(testConf.data));
                                 jobParameters = job.createJobParameters(params);
                                 computationsManager.runJobWithInstanceManager(job.name, jobParameters.values, {
                                     onJobCompleted: (res)=>{
@@ -157,11 +158,14 @@ computationManagerConfigs.forEach(mangerConf=>{
 
 
 function loadData(fileName){
+    fixtures.fixturesPath = "base/test/";
     return JSON.parse(readFixtures("data/"+fileName));
 }
 
 
 function loadCsv(fileName, cb){
+
+    fixtures.fixturesPath = "base/test/";
     csvParse(readFixtures("data/csv/"+fileName), {'auto_parse': true}, function(err, rows) {
         cb(rows)
     })

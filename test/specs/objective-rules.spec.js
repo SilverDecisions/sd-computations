@@ -9,7 +9,7 @@ describe("Objective rules", function () {
     let computationsManager = new ComputationsManager();
     let json = JSON.parse(readFixtures("payoffrules_pass.json"));
 
-    computationsManager.data = new DataModel(json.data);
+    computationsManager.setData(new DataModel(json.data));
 
     let result;
     beforeEach(function (done) {
