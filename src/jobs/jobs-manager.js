@@ -73,18 +73,21 @@ export class JobsManager extends JobExecutionListener {
     }
 
     initRepository() {
-        if(this.config.repositoryType === 'idb'){
-            this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver(), 'sd-job-repository', this.config.clearRepository);
-        }else if('timeout'){
-            this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
-        }else if('simple'){
-            this.jobRepository = new SimpleJobRepository(this.expressionEngine.getJsonReviver());
-        }else{
-            log.error('JobsManager configuration error! Unknown repository type: '+this.config.repositoryType+'. Using default: idb');
-            this.config.repositoryType = 'idb';
-            this.initRepository()
+        switch (this.config.repositoryType){
+            case 'idb':
+                this.jobRepository = new IdbJobRepository(this.expressionEngine.getJsonReviver(), 'sd-job-repository', this.config.clearRepository);
+                break;
+            case 'timeout':
+                this.jobRepository = new TimeoutJobRepository(this.expressionEngine.getJsonReviver());
+                break;
+            case 'simple':
+                this.jobRepository = new SimpleJobRepository(this.expressionEngine.getJsonReviver());
+                break;
+            default:
+                log.error('JobsManager configuration error! Unknown repository type: '+this.config.repositoryType+'. Using default: idb');
+                this.config.repositoryType = 'idb';
+                this.initRepository()
         }
-
     }
 
     serializeData(data) {
