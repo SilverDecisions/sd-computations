@@ -39,7 +39,7 @@ let fixtures = jasmine.getFixtures();
 
 computationManagerConfigs.filter(c=>configToUse? c===configToUse : true).forEach(mangerConf=>{
 
-    fdescribe("Computation manger config ["+mangerConf.name+"] - ",  () => {
+    describe("Computation manger config ["+mangerConf.name+"] - ",  () => {
         let computationsManager = new ComputationsManager(mangerConf.config);
 
         beforeAll((done)=>{

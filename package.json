@@ -1,6 +1,6 @@
 {
   "name": "sd-computations",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "SilverDecisions computations module",
   "main": "index.js",
   "directories": {
@@ -91,8 +91,8 @@
   },
   "dependencies": {
     "idb": "^2.0.4",
-    "sd-expression-engine": "0.1.10",
-    "sd-model": "0.2.5",
+    "sd-expression-engine": "0.1.11",
+    "sd-model": "0.2.6",
     "sd-utils": "0.1.10",
     "sd-random": "0.1.1"
   }
