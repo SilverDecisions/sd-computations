@@ -31,11 +31,15 @@ let computationManagerConfigs = [
     }
 ];
 
+let configToUse = null;
+let jobFileNameToFocusOn = null;
+
 let fixtures = jasmine.getFixtures();
 
-computationManagerConfigs.forEach(mangerConf=>{
 
-    describe("Computation manger config ["+mangerConf.name+"] - ",  () => {
+computationManagerConfigs.filter(c=>configToUse? c===configToUse : true).forEach(mangerConf=>{
+
+    fdescribe("Computation manger config ["+mangerConf.name+"] - ",  () => {
         let computationsManager = new ComputationsManager(mangerConf.config);
 
         beforeAll((done)=>{
@@ -67,7 +71,7 @@ computationManagerConfigs.forEach(mangerConf=>{
 
 
 
-            fileList.filter(n=>n.lastIndexOf('job-', 0) === 0).forEach(function (fileName) {
+            fileList.filter(n=>jobFileNameToFocusOn ? n===jobFileNameToFocusOn : n.lastIndexOf('job-', 0) === 0).forEach(function (fileName) {
                 let json = loadData(fileName);
 
                 describe(json.name+" from "+fileName+":", function(){

@@ -96,8 +96,10 @@ export class CalculateStep extends Step {
         }
 
         let prev2NotDominated = null;
+
+
         rows.filter(r=>!r.dominatedBy).sort((a, b)=>(  payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0]))).forEach((r, i, arr)=> {
-            if (i == 0) {
+            if (!i) {
                 r.incratio = 0;
                 return;
             }
@@ -129,7 +131,10 @@ export class CalculateStep extends Step {
         //mark optimal for weight in [weightLowerBound, weightUpperBound] and optimal for default Weight
         let lastLELower = null;
         let lastLELowerDef = null;
-        rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => a.incratio - b.incratio).forEach((row, i, arr)=>{
+        rows.slice().filter(r=>!r.dominatedBy && !r.extendedDominatedBy).sort((a, b) => {
+            let sub = a.incratio - b.incratio;
+            return sub ? sub : payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0])
+        }).forEach((row, i, arr)=>{
 
             if(row.incratio < weightLowerBound){
                 lastLELower  = row;

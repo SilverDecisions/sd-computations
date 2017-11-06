@@ -1,0 +1,6 @@
+"policy_id","policy","Cost","Effect","dominated_by","extended-dominated_by","incratio","optimal","optimal_for_default_weight"
+1,":treatement B",4,5,,,0,true,false
+2,":wait - (:treatement B)",2.375,3,3,,,false,false
+3,":treatment C",2.5,2.75,,,0.6666666666666666,true,false
+4,":treatement A",2,2,,,0.6666666666666666,true,true
+5,":wait - (:treatment A)",1.25,1.5,,,1.5,true,false
