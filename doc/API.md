@@ -4,7 +4,7 @@
 
 Computation manager configuration object
 
-**Parameters**
+### Parameters
 
 -   `custom`  configuration object to extend
 
@@ -40,9 +40,9 @@ worker url
 
 Computation manager
 
-**Parameters**
+### Parameters
 
--   `config` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `config` **[object][1]** 
 -   `data` **DataModel** model object (optional, default `null`)
 
 ### recompute
@@ -53,11 +53,11 @@ Alias function for checkValidityAndRecomputeObjective
 
 Checks validity of data model and recomputes objective rules
 
-**Parameters**
+#### Parameters
 
--   `allRules` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** recompute all objective rules
--   `evalCode` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** evaluate code (optional, default `false`)
--   `evalNumeric` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** evaluate numeric expressions (optional, default `true`)
+-   `allRules` **[boolean][2]** recompute all objective rules
+-   `evalCode` **[boolean][2]** evaluate code (optional, default `false`)
+-   `evalNumeric` **[boolean][2]** evaluate numeric expressions (optional, default `true`)
 
 Returns **any** promise
 
@@ -69,21 +69,21 @@ Returns **ObjectiveRule** current objective rule
 
 Sets current objective rule
 
-**Parameters**
+#### Parameters
 
--   `ruleName` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** name of objective rule
+-   `ruleName` **[string][3]** name of objective rule
 
 ### getJobByName
 
-**Parameters**
+#### Parameters
 
--   `jobName` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `jobName` **[string][3]** 
 
 Returns **Job** 
 
 ### operationsForObject
 
-**Parameters**
+#### Parameters
 
 -   `object`  
 
@@ -93,7 +93,7 @@ Returns **any** array of operations applicable to the given object (node or edge
 
 Checks validity of data model without recomputation and revalidation
 
-**Parameters**
+#### Parameters
 
 -   `data` **DataModel** to check
 
@@ -101,23 +101,31 @@ Checks validity of data model without recomputation and revalidation
 
 Run job
 
-**Parameters**
+#### Parameters
 
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** job name
--   `jobParamsValues` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** job parameter values object
+-   `name` **[string][3]** job name
+-   `jobParamsValues` **[object][1]** job parameter values object
 -   `data` **DataModel** model
--   `resolvePromiseAfterJobIsLaunched` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** immediately resolve promise with still running JobExecution (optional, default `true`)
+-   `resolvePromiseAfterJobIsLaunched` **[boolean][2]** immediately resolve promise with still running JobExecution (optional, default `true`)
 
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** resolving to JobExecution
+Returns **[Promise][4]** resolving to JobExecution
 
 ### runJobWithInstanceManager
 
 Run job using JobInstanceManager
 
-**Parameters**
+#### Parameters
 
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** job name
--   `jobParamsValues` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** job parameter values object
+-   `name` **[string][3]** job name
+-   `jobParamsValues` **[object][1]** job parameter values object
 -   `jobInstanceManagerConfig` **JobInstanceManagerConfig** JobInstanceManager configuration
 
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** resolving to JobInstanceManager
+Returns **[Promise][4]** resolving to JobInstanceManager
+
+[1]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+[2]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+
+[3]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+
+[4]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise

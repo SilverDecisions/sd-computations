@@ -37,15 +37,24 @@ for(var k in p.dependencies){
 var projectName= "sd-computations";
 var standaloneName= "SilverDecisions.Computations";
 
+
+gulp.task('prepare-test', function(){
+    return gulp
+        .src('test/data/*.json')
+        .pipe(require('gulp-filelist')('data-json-filelist.json', { flatten: true }))
+        .pipe(gulp.dest('test'))
+});
+
+gulp.task('test', gulp.series('prepare-test', function (done) {
+    return runTest(true, done)
+}));
+
+gulp.task('test-watch', gulp.series('prepare-test', function (done) {
+    return runTest(false, done)
+}));
+
 gulp.task('clean', function (cb) {
     return del(['tmp', 'dist'], cb);
-});
-
-gulp.task('build-clean', ['clean'], function (cb) {
-    runSequence('clean', 'build', cb)
-});
-
-gulp.task('build', ['build-standalone', 'build-module' ,'build-vendor'], function () {
 });
 
 gulp.task('build-standalone', function () {
@@ -67,20 +76,20 @@ gulp.task('build-vendor', function () {
     return buildJsDependencies(projectName+"-vendor", vendorDependencies, "dist")
 });
 
-gulp.task('prepare-test', function(){
-    return gulp
-        .src('test/data/*.json')
-        .pipe(require('gulp-filelist')('data-json-filelist.json', { flatten: true }))
-        .pipe(gulp.dest('test'))
+gulp.task('build', gulp.parallel('build-standalone', 'build-module' ,'build-vendor'));
+
+gulp.task('build-clean', gulp.series('clean', 'build'));
+
+
+gulp.task('doc', function () {
+    return gulp.src('./src/computations-manager.js')
+        .pipe(plugins.documentation('md', {shallow: true}))
+        .pipe(gulp.dest('doc'));
 });
 
-gulp.task('test', ['prepare-test'], function (done) {
-    return runTest(true, done)
-});
+gulp.task('default', gulp.series(gulp.parallel('build-clean', 'doc'), 'test'));
 
-gulp.task('test-watch', ['prepare-test'], function (done) {
-    return runTest(false, done)
-});
+
 
 function runTest(singleRun, done){
     return new Server({
@@ -124,7 +133,7 @@ function buildJsDependencies(jsFileName, moduleNames, dest, failOnError){
 
 function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
     var pipe = b
-        .transform("babelify", {presets: ["es2015"],  plugins: ["transform-class-properties", "transform-object-assign", ["transform-builtin-extend", {globals: ["Error"]}]]})
+        .transform("babelify", {presets: ["@babel/preset-env"],  plugins: ["transform-class-properties", "transform-object-assign", ["transform-builtin-extend", {globals: ["Error"]}]]})
         .bundle();
     if(!failOnError){
         pipe = pipe.on('error', map_error )
@@ -153,9 +162,7 @@ function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
     return pipe;
 }
 
-gulp.task('default',  function(cb) {
-    runSequence('build-clean', 'test', 'doc', cb);
-});
+;
 
 var onError = function (err) {
     console.log('onError', err);
@@ -189,8 +196,3 @@ function map_error(err) {
 }
 
 
-gulp.task('doc', function () {
-    return gulp.src('./src/computations-manager.js')
-        .pipe(plugins.documentation('md', {shallow: true}))
-        .pipe(gulp.dest('doc'));
-});

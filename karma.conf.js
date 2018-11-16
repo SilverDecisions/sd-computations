@@ -78,7 +78,7 @@ module.exports = function (config) {
                     "babelify",
                     {
                         "presets": [
-                            "es2015"
+                            "@babel/preset-env"
                         ],
                         "plugins": [
                             "transform-class-properties",
@@ -117,6 +117,11 @@ module.exports = function (config) {
             ]
         },
         browserDisconnectTolerance: 2,
-        browserNoActivityTimeout: 50000
+        browserNoActivityTimeout: 50000,
+        client: {
+            jasmine: {
+                random: false
+            }
+        }
     });
 };
