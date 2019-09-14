@@ -1,5 +1,5 @@
 import {JobRepository} from "./job-repository";
-import {default as idb} from "idb";
+import { openDb, deleteDb } from 'idb';
 import {Utils} from "sd-utils";
 import {JobExecution} from "../job-execution";
 import {JobInstance} from "../job-instance";
@@ -36,7 +36,7 @@ export class IdbJobRepository extends JobRepository {
     }
 
     initDB() {
-        this.dbPromise = idb.open(this.dbName, 2, upgradeDB => {
+        this.dbPromise = openDb(this.dbName, 2, upgradeDB => {
             // Note: we don't use 'break' in this switch statement,
             // the fall-through behaviour is what we want.
             switch (upgradeDB.oldVersion) {
@@ -68,7 +68,7 @@ export class IdbJobRepository extends JobRepository {
     }
 
     deleteDB() {
-        return Promise.resolve().then(_=>idb.delete(this.dbName));
+        return Promise.resolve().then(_=>deleteDb(this.dbName));
     }
 
 

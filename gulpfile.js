@@ -5,7 +5,6 @@ var plugins = require('gulp-load-plugins')();
 var argv = require('yargs').argv;
 
 var browserify = require("browserify");
-var resolutions = require('browserify-resolutions');
 var source = require('vinyl-source-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var buffer = require('vinyl-buffer');
