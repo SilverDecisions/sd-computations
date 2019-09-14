@@ -3,9 +3,14 @@
 
   "increment": "patch",
   "preReleaseId": null,
-  "buildCommand": "ncu -u --packageFile package.json sd-utils sd-model sd-random sd-expression-engine sd-tree-designer && npm update sd-utils sd-model sd-random sd-expression-engine sd-tree-designer && gulp",
+  "hooks": {
+    "after:bump": ["ncu -u --packageFile package.json sd-utils sd-model sd-random sd-expression-engine sd-tree-designer", "npm update sd-utils sd-model sd-random sd-expression-engine sd-tree-designer", "gulp"]
+  },
   "changelogCommand": "git log --pretty=format:\"* %s (%h)\" [REV_RANGE]",
   "npm": {
     "publish": true
+  },
+  "git": {
+    "requireCleanWorkingDir": false
   }
 }
