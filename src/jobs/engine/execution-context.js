@@ -48,6 +48,8 @@ export class ExecutionContext {
         var data = this.getData();
         if (data) {
             data = data.getDTO();
+            dto.context["data"] = null;
+            dto.context = JSON.parse(Utils.stringify(dto.context, null, null));
             dto.context["data"] = data;
         }
         return dto;

@@ -11,7 +11,7 @@ export class Decision{
         this.key = Decision.generateKey(this);
     }
 
-    static generateKey(decision, keyProperty='$id'){
+    static generateKey(decision, keyProperty='id'){
         var e = decision.node.childEdges[decision.decisionValue];
         var key = decision.node[keyProperty]+":"+(e[keyProperty]? e[keyProperty] : decision.decisionValue+1);
         return key.replace(/\n/g, ' ');
@@ -29,7 +29,7 @@ export class Decision{
     }
 
     static getDecision(decision, decisionNode){
-        if(decision.node===decisionNode || decision.node.$id === decisionNode.$id){
+        if(decision.node===decisionNode || decision.node.id === decisionNode.id){
             return decision;
         }
         for(var i=0; i<decision.children.length; i++){
