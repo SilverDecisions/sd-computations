@@ -77,6 +77,10 @@ export class JobRepository {
         throw "JobRepository.getJobResultByInstance function not implemented!"
     }
 
+    getJobResultByExecution(jobInstance){
+        throw "JobRepository.getJobResultByExecution function not implemented!"
+    }
+
     saveJobResult(jobResult) {
         throw "JobRepository.setJobResult function not implemented!"
     }

@@ -35,6 +35,10 @@ export class TimeoutJobRepository extends SimpleJobRepository{
         return this.createTimeoutPromise(Utils.find(this.jobResults, r=>r.jobInstance.id===jobInstance.id));
     }
 
+    getJobResultByExecution(jobExecution){
+        return this.getJobResultByInstance(jobExecution.jobInstance);
+    }
+
     saveJobResult(jobResult) {
         this.jobResults.push(jobResult);
         return this.createTimeoutPromise(jobResult);

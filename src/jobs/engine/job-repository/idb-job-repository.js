@@ -7,6 +7,7 @@ import {StepExecution} from "../step-execution";
 import {ExecutionContext} from "../execution-context";
 import {DataModel} from "sd-model";
 import {log} from "sd-utils";
+import {JobResult} from "../job-result";
 
 /* IndexedDB job repository*/
 export class IdbJobRepository extends JobRepository {
@@ -104,16 +105,21 @@ export class IdbJobRepository extends JobRepository {
 
 
 
-    getJobResult(jobResultId) {
-        return this.jobResultDao.get(jobResultId);
+    getJobResult(jobResultId, revive = true) {
+        return this.jobResultDao.get(jobResultId).then(dto => dto && revive ? this.reviveJobResult(dto) : dto);
     }
 
-    getJobResultByInstance(jobInstance) {
-        return this.jobResultDao.getByIndex("jobInstanceId", jobInstance.id);
+    getJobResultByInstance(jobInstance, revive = true) {
+        return this.jobResultDao.getByIndex("jobInstanceId", jobInstance.id).then(dto => dto && revive ? this.reviveJobResult(dto) : dto);
+    }
+
+    getJobResultByExecution(jobExecution, revive = true) {
+        return this.getJobResultByInstance(jobExecution.jobInstance, false).then(dto => dto && revive ? this.reviveJobResult(dto, jobExecution) : dto);
     }
 
     saveJobResult(jobResult) {
-        return this.jobResultDao.set(jobResult.id, jobResult).then(r=>jobResult);
+        let dto = jobResult.getDTO();
+        return this.jobResultDao.set(jobResult.id, dto).then(r=>jobResult);
     }
 
     /*returns promise*/
@@ -224,8 +230,14 @@ export class IdbJobRepository extends JobRepository {
         });
     }
 
-    getLastJobExecutionByInstance(jobInstance) {
-        return this.findJobExecutions(jobInstance, false).then(executions=>this.fetchJobExecutionRelations(executions[executions.length - 1]));
+    getLastJobExecutionByInstance(jobInstance, fetchRelationsAndRevive = true) {
+        return this.findJobExecutions(jobInstance, false).then(executions=>{
+            let execution = executions[executions.length - 1];
+            if (!fetchRelationsAndRevive) {
+                return execution;
+            }
+            this.fetchJobExecutionRelations(execution);
+        });
     }
 
     getLastStepExecution(jobInstance, stepName) {
@@ -247,15 +259,28 @@ export class IdbJobRepository extends JobRepository {
     }
 
     reviveExecutionContext(dto) {
-        var executionContext = new ExecutionContext();
+        let executionContext = new ExecutionContext();
         executionContext.context = dto.context;
-        var data = executionContext.getData();
+        let data = executionContext.getData();
         if (data) {
-            var dataModel = new DataModel();
+            let dataModel = new DataModel();
             dataModel.loadFromDTO(data, this.expressionsReviver);
+
+            executionContext.setData(null);
+            this.reviveFromDTO(executionContext.context, dto.context, dataModel);
+
             executionContext.setData(dataModel);
+
         }
         return executionContext
+    }
+
+    reviveFromDTO(target, dto, dataModel) {
+        return Utils.mergeWith(target, dto, (value, dtoValue, key)=> {
+            if(dtoValue && dtoValue.$ObjectWithIdAndEditableFields && dtoValue.id){
+                return dataModel.findById(dtoValue.id) || value;
+            }
+        })
     }
 
     reviveJobExecution(dto) {
@@ -296,6 +321,20 @@ export class IdbJobRepository extends JobRepository {
                 return executionContext;
             }
         })
+    }
+
+    reviveJobResult(dto, jobExecution = null) {
+        let job = this.getJobByName(dto.jobInstance.jobName);
+        let jobInstance = this.reviveJobInstance(dto.jobInstance);
+
+        let contextPromise;
+        if (jobExecution != null) {
+            contextPromise = Promise.resolve(jobExecution.executionContext);
+        }else{
+            contextPromise = this.getLastJobExecutionByInstance(jobInstance, false).then(jobExecutionDto => this.reviveExecutionContext(jobExecutionDto.executionContext));
+        }
+
+        return contextPromise.then(executionContext => job.reviveResultData( this.reviveFromDTO({}, dto.data, executionContext.getData()), executionContext)).then(d=>new JobResult(jobInstance, dto.id, d));
     }
 }
 

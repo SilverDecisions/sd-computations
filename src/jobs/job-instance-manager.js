@@ -102,7 +102,7 @@ export class JobInstanceManager extends JobExecutionListener {
             this.jobsManger.deregisterJobExecutionListener(this);
             this.progress = this.getProgressFromExecution(jobExecution);
             this.config.onProgress.call(this.config.callbacksThisArg || this, this.progress);
-            this.jobsManger.getResult(jobExecution.jobInstance).then(result=> {
+            this.jobsManger.getResult(jobExecution).then(result=> {
                 this.config.onJobCompleted.call(this.config.callbacksThisArg || this, result.data);
             }).catch(e=> {
                 log.error(e);

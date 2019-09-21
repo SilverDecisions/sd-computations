@@ -40,8 +40,16 @@ export class CalculateStep extends BatchStep {
         let policiesCollector = new PoliciesCollector(treeRoot, ruleName);
 
         let defaultValues = {};
-        Utils.forOwn(data.expressionScope, (v,k)=>{
-            defaultValues[k]=this.toFloat(v);
+        data.getGlobalVariableNames().forEach(name => {
+            let v = data.expressionScope[name];
+            try {
+                defaultValues[name] = this.toFloat(v);
+            } catch (e) {
+                throw new JobComputationException("error computing float value of a variable", {
+                    name: name,
+                    value: v,
+                })
+            }
         });
 
 

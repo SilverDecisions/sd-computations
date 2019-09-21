@@ -1,4 +1,6 @@
 import {Utils} from "sd-utils";
+import {DataModel} from "sd-model";
+import {StepExecution} from "./step-execution";
 
 export class ExecutionContext {
 
@@ -43,16 +45,37 @@ export class ExecutionContext {
         return this.get("data");
     }
 
-    getDTO() {
-        var dto = Utils.cloneDeep(this);
-        var data = this.getData();
-        if (data) {
-            data = data.getDTO();
-            dto.context["data"] = null;
-            dto.context = JSON.parse(Utils.stringify(dto.context, null, null));
-            dto.context["data"] = data;
+
+    getDTO(filteredProperties = [], deepClone = true) {
+        var cloneMethod = Utils.cloneDeepWith;
+        if (!deepClone) {
+            cloneMethod = Utils.cloneWith;
         }
-        return dto;
+
+
+        let dto = Utils.assign({}, cloneMethod(this, (value, key, object, stack)=> {
+            if (filteredProperties.indexOf(key) > -1) {
+                return null;
+            }
+
+            if (value instanceof DataModel) {
+                return value.getDTO()
+            }
+
+            if(value && value.$ObjectWithIdAndEditableFields && value.id && this.getData().findById(value.id)){
+                return {
+                    '$ObjectWithIdAndEditableFields': true,
+                    id: value.id
+                }
+            }
+
+            if (value instanceof Error) {
+                return Utils.getErrorDTO(value);
+            }
+
+        }));
+
+        return dto
     }
 
 }

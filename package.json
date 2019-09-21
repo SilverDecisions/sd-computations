@@ -93,9 +93,9 @@
   },
   "dependencies": {
     "idb": "^3.0.2",
-    "sd-expression-engine": "0.1.13",
-    "sd-model": "0.2.8",
-    "sd-utils": "0.1.12",
-    "sd-random": "0.1.3"
+    "sd-expression-engine": "~0.1.14",
+    "sd-model": "~0.2.9",
+    "sd-random": "^0.1.3",
+    "sd-utils": "^0.1.13"
   }
 }

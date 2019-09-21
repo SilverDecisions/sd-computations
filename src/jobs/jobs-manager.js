@@ -102,7 +102,14 @@ export class JobsManager extends JobExecutionListener {
         return this.jobRepository.getJobExecutionProgress(id);
     }
 
-    getResult(jobInstance) {
+    getResult(jobInstanceOrExecution) {
+        let jobInstance = jobInstanceOrExecution;
+        let jobExecution = null;
+        if(jobInstanceOrExecution.jobInstance){
+            jobExecution = jobInstanceOrExecution;
+            jobInstance = jobExecution.jobInstance;
+        }
+
         return this.jobRepository.getJobResultByInstance(jobInstance);
     }
 

@@ -171,7 +171,12 @@ export class Job {
     }
 
     getResult(execution) {
-        return this.jobRepository.getJobResultByInstance(execution.jobInstance);
+        return this.jobRepository.getJobResultByExecution(execution);
+    }
+
+    /* revive job result data (after conversion to dto) if needed*/
+    reviveResultData(data, executionContext) {
+        return data;
     }
 
     jobResultToCsvRows(jobResult, jobParameters){

@@ -70,6 +70,10 @@ export class SimpleJobRepository extends JobRepository{
         return Promise.resolve(Utils.find(this.jobResults, r=>r.jobInstance.id===jobInstance.id))
     }
 
+    getJobResultByExecution(jobExecution){
+        return this.getJobResultByInstance(jobExecution.jobInstance);
+    }
+
     saveJobResult(jobResult) {
         this.jobResults.push(jobResult);
         return Promise.resolve(jobResult);
