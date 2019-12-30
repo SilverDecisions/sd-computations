@@ -78,12 +78,17 @@ export class ComputationsManager {
         this.expressionEngine = new ExpressionEngine();
         this.expressionsEvaluator = new ExpressionsEvaluator(this.expressionEngine);
         this.objectiveRulesManager = new ObjectiveRulesManager(this.expressionEngine, this.config.ruleName);
-        this.operationsManager = new OperationsManager(this.data, this.expressionEngine);
+
         this.jobsManger = new JobsManager(this.expressionsEvaluator, this.objectiveRulesManager, {
             workerUrl: this.config.worker.url,
             repositoryType: this.config.jobRepositoryType,
             clearRepository: this.config.clearRepository
         });
+
+        this.operationsManager = new OperationsManager(this.data, this.expressionEngine, new JobsManager(this.expressionsEvaluator, this.objectiveRulesManager, {
+            repositoryType: 'timeout',
+        }));
+
         this.treeValidator = new TreeValidator(this.expressionEngine);
         this.mcdmWeightValueValidator = new McdmWeightValueValidator();
     }
@@ -195,7 +200,7 @@ export class ComputationsManager {
      */
 
     isValid(data) {
-        var data = data || this.data;
+        data = data || this.data;
         return data.validationResults.every(vr=>vr.isValid());
     }
     /**
@@ -221,6 +226,10 @@ export class ComputationsManager {
         return this.runJob(name, jobParamsValues).then(je=> {
             return new JobInstanceManager(this.jobsManger, je, jobInstanceManagerConfig);
         })
+    }
+
+    performOperation(object, operationName, jobParamsValues){
+        return this.operationsManager.performOperation(object, operationName, jobParamsValues);
     }
 
     getObjectiveRules() {

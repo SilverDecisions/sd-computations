@@ -1,4 +1,6 @@
 
+
+
 /*Base class for complex operations on tree structure*/
 export class Operation{
 
@@ -9,7 +11,7 @@ export class Operation{
     }
 
     //check if operation is potentially applicable for object
-    isApplicable(){
+    isApplicable(object){
         throw 'isApplicable function not implemented for operation: '+this.name
     }
 
@@ -18,7 +20,7 @@ export class Operation{
         throw 'canPerform function not implemented for operation: '+this.name
     }
 
-    perform(object){
+    perform(object, params){
         throw 'perform function not implemented for operation: '+this.name
     }
 
