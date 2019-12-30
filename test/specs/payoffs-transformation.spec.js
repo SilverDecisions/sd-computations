@@ -3,7 +3,7 @@ import {DataModel} from "sd-model";
 import {Utils} from "sd-utils";
 import {PayoffsTransformation} from '../../src/operations/payoffs-transformation'
 
-fdescribe("Payoffs transformation", function () {
+describe("Payoffs transformation", function () {
     let fixtures = jasmine.getFixtures();
     fixtures.fixturesPath = "base/test/trees";
 
