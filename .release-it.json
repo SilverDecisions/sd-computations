@@ -1,7 +1,7 @@
 {
   "non-interactive": false,
 
-  "increment": "minor",
+  "increment": "patch",
   "preReleaseId": null,
   "hooks": {
     "after:bump": ["ncu -u --packageFile package.json sd-utils sd-model sd-random sd-expression-engine sd-tree-designer", "npm update sd-utils sd-model sd-random sd-expression-engine sd-tree-designer", "gulp"]
