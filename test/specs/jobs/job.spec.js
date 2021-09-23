@@ -3,7 +3,6 @@ import {DataModel} from "sd-model";
 import {parse as csvParse} from "csv"
 
 
-
 let computationManagerConfigs = [
     {
         "name": "IDB job repository without worker",
@@ -188,17 +187,12 @@ function compareCsv(csv1, csv2){
     })
 }
 
-function getCellVal(v){
-    if (!v && v !== false){
+function getCellVal(v) {
+    if (!v && v !== false && v !== 0) {
         return ''
     }
-    if(v === false){
-        return 'false'
-    }
-    if(v === true){
-        return 'true'
-    }
-    return v;
+
+    return String(v);
 }
 
 function findScriptSrc(regex){

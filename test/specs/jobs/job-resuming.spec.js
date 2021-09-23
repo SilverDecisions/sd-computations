@@ -163,14 +163,9 @@ function compareCsv(csv1, csv2) {
 }
 
 function getCellVal(v) {
-    if (!v && v !== false) {
+    if (!v && v !== false && v !== 0) {
         return ''
     }
-    if (v === false) {
-        return 'false'
-    }
-    if (v === true) {
-        return 'true'
-    }
-    return v;
+
+    return String(v);
 }
