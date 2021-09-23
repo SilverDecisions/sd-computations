@@ -1,5 +1,5 @@
 import {JobRepository} from "./job-repository";
-import { openDb, deleteDb } from 'idb';
+import { openDB, deleteDB } from 'idb';
 import {Utils} from "sd-utils";
 import {JobExecution} from "../job-execution";
 import {JobInstance} from "../job-instance";
@@ -37,27 +37,29 @@ export class IdbJobRepository extends JobRepository {
     }
 
     initDB() {
-        this.dbPromise = openDb(this.dbName, 2, upgradeDB => {
-            // Note: we don't use 'break' in this switch statement,
-            // the fall-through behaviour is what we want.
-            switch (upgradeDB.oldVersion) {
-                case 0:
-                    upgradeDB.createObjectStore('job-instances');
-                    var jobExecutionsOS = upgradeDB.createObjectStore('job-executions');
-                    jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", {unique: false});
-                    jobExecutionsOS.createIndex("createTime", "createTime", {unique: false});
-                    jobExecutionsOS.createIndex("status", "status", {unique: false});
-                    upgradeDB.createObjectStore('job-execution-progress');
-                    upgradeDB.createObjectStore('job-execution-flags');
-                    var stepExecutionsOS = upgradeDB.createObjectStore('step-executions');
-                    stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", {unique: false});
+        this.dbPromise = openDB(this.dbName, 2, {
+            upgrade(db, oldVersion, newVersion, transaction) {
+                // Note: we don't use 'break' in this switch statement,
+                // the fall-through behaviour is what we want.
+                switch (oldVersion) {
+                    case 0:
+                        db.createObjectStore('job-instances');
+                        var jobExecutionsOS = db.createObjectStore('job-executions');
+                        jobExecutionsOS.createIndex("jobInstanceId", "jobInstance.id", {unique: false});
+                        jobExecutionsOS.createIndex("createTime", "createTime", {unique: false});
+                        jobExecutionsOS.createIndex("status", "status", {unique: false});
+                        db.createObjectStore('job-execution-progress');
+                        db.createObjectStore('job-execution-flags');
+                        var stepExecutionsOS = db.createObjectStore('step-executions');
+                        stepExecutionsOS.createIndex("jobExecutionId", "jobExecutionId", {unique: false});
 
-                    var jobResultOS = upgradeDB.createObjectStore('job-results');
-                    jobResultOS.createIndex("jobInstanceId", "jobInstance.id", {unique: true});
-                case 1:
-                    upgradeDB.transaction.objectStore('job-instances').createIndex("id", "id", {unique: true});
+                        var jobResultOS = db.createObjectStore('job-results');
+                        jobResultOS.createIndex("jobInstanceId", "jobInstance.id", {unique: true});
+                    case 1:
+                        transaction.objectStore('job-instances').createIndex("id", "id", {unique: true});
+                }
+
             }
-
         });
 
         this.jobInstanceDao = new ObjectStoreDao('job-instances', this.dbPromise);
@@ -69,7 +71,7 @@ export class IdbJobRepository extends JobRepository {
     }
 
     deleteDB() {
-        return Promise.resolve().then(_=>deleteDb(this.dbName));
+        return Promise.resolve().then(_=>deleteDB(this.dbName));
     }
 
 
@@ -374,7 +376,7 @@ class ObjectStoreDao {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name, 'readwrite');
             tx.objectStore(this.name).put(val, key);
-            return tx.complete;
+            return tx.done;
         });
     }
 
@@ -382,7 +384,7 @@ class ObjectStoreDao {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name, 'readwrite');
             tx.objectStore(this.name).delete(key);
-            return tx.complete;
+            return tx.done;
         });
     }
 
@@ -390,25 +392,15 @@ class ObjectStoreDao {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name, 'readwrite');
             tx.objectStore(this.name).clear();
-            return tx.complete;
+            return tx.done;
         });
     }
 
     keys() {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name);
-            const keys = [];
             const store = tx.objectStore(this.name);
-
-            // This would be store.getAllKeys(), but it isn't supported by Edge or Safari.
-            // openKeyCursor isn't supported by Safari, so we fall back
-            (store.iterateKeyCursor || store.iterateCursor).call(store, cursor => {
-                if (!cursor) return;
-                keys.push(cursor.key);
-                cursor.continue();
-            });
-
-            return tx.complete.then(() => keys);
+            return store.getAllKeys();
         });
     }
 }
