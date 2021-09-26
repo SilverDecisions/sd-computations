@@ -6,7 +6,7 @@ Computation manager configuration object
 
 ### Parameters
 
--   `custom`  configuration object to extend
+*   `custom`  configuration object to extend
 
 ### logLevel
 
@@ -42,8 +42,8 @@ Computation manager
 
 ### Parameters
 
--   `config` **[object][1]** 
--   `data` **DataModel** model object (optional, default `null`)
+*   `config` **[object][1]** 
+*   `data` **DataModel** model object (optional, default `null`)
 
 ### recompute
 
@@ -55,9 +55,9 @@ Checks validity of data model and recomputes objective rules
 
 #### Parameters
 
--   `allRules` **[boolean][2]** recompute all objective rules
--   `evalCode` **[boolean][2]** evaluate code (optional, default `false`)
--   `evalNumeric` **[boolean][2]** evaluate numeric expressions (optional, default `true`)
+*   `allRules` **[boolean][2]** recompute all objective rules
+*   `evalCode` **[boolean][2]** evaluate code (optional, default `false`)
+*   `evalNumeric` **[boolean][2]** evaluate numeric expressions (optional, default `true`)
 
 Returns **any** promise
 
@@ -71,13 +71,13 @@ Sets current objective rule
 
 #### Parameters
 
--   `ruleName` **[string][3]** name of objective rule
+*   `ruleName` **[string][3]** name of objective rule
 
 ### getJobByName
 
 #### Parameters
 
--   `jobName` **[string][3]** 
+*   `jobName` **[string][3]** 
 
 Returns **Job** 
 
@@ -85,7 +85,7 @@ Returns **Job**
 
 #### Parameters
 
--   `object`  
+*   `object`  
 
 Returns **any** array of operations applicable to the given object (node or edge)
 
@@ -95,7 +95,7 @@ Checks validity of data model without recomputation and revalidation
 
 #### Parameters
 
--   `data` **DataModel** to check
+*   `data` **DataModel** to check
 
 ### runJob
 
@@ -103,10 +103,10 @@ Run job
 
 #### Parameters
 
--   `name` **[string][3]** job name
--   `jobParamsValues` **[object][1]** job parameter values object
--   `data` **DataModel** model
--   `resolvePromiseAfterJobIsLaunched` **[boolean][2]** immediately resolve promise with still running JobExecution (optional, default `true`)
+*   `name` **[string][3]** job name
+*   `jobParamsValues` **[object][1]** job parameter values object
+*   `data` **DataModel** model
+*   `resolvePromiseAfterJobIsLaunched` **[boolean][2]** immediately resolve promise with still running JobExecution (optional, default `true`)
 
 Returns **[Promise][4]** resolving to JobExecution
 
@@ -116,9 +116,9 @@ Run job using JobInstanceManager
 
 #### Parameters
 
--   `name` **[string][3]** job name
--   `jobParamsValues` **[object][1]** job parameter values object
--   `jobInstanceManagerConfig` **JobInstanceManagerConfig** JobInstanceManager configuration
+*   `name` **[string][3]** job name
+*   `jobParamsValues` **[object][1]** job parameter values object
+*   `jobInstanceManagerConfig` **JobInstanceManagerConfig** JobInstanceManager configuration
 
 Returns **[Promise][4]** resolving to JobInstanceManager
 
