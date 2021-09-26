@@ -24,11 +24,19 @@
     "url": "https://github.com/SilverDecisions/sd-computations/issues"
   },
   "homepage": "https://github.com/SilverDecisions/sd-computations#readme",
+  "browserslist": [
+    "last 3 versions",
+    "> 0.25%",
+    "Firefox ESR",
+    "not dead"
+  ],
   "browserify": {
     "transform": [
       [
         "babelify",
         {
+          "global": true,
+          "ignore": ["/\\/node_modules\\/(?!idb\\/)/"],
           "presets": [
             "@babel/preset-env"
           ],

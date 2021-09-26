@@ -22,25 +22,26 @@ var chalk = require('chalk')
 var dependencies = [];
 var vendorDependencies = [];
 var sdDependencies = [];
-for(var k in p.dependencies){
-    if(p.dependencies.hasOwnProperty(k)){
+for (var k in p.dependencies) {
+    if (p.dependencies.hasOwnProperty(k)) {
         dependencies.push(k);
-        if(k.trim().startsWith("sd-")){
+        if (k.trim().startsWith("sd-")) {
             sdDependencies.push(k)
-        }else{
+        } else {
             vendorDependencies.push(k)
         }
     }
 }
 
-var projectName= "sd-computations";
-var standaloneName= "SilverDecisions.Computations";
+var projectName = "sd-computations";
+var standaloneName = "SilverDecisions.Computations";
 
+const browserifyTransforms = p.browserify.transform.reduce((acc, curr) => (acc[curr[0]] = curr[1], acc), {});
 
-gulp.task('prepare-test', function(){
+gulp.task('prepare-test', function () {
     return gulp
         .src('test/data/*.json')
-        .pipe(require('gulp-filelist')('data-json-filelist.json', { flatten: true }))
+        .pipe(require('gulp-filelist')('data-json-filelist.json', {flatten: true}))
         .pipe(gulp.dest('test'))
 });
 
@@ -53,29 +54,29 @@ gulp.task('test-watch', gulp.series('prepare-test', function (done) {
 }));
 
 gulp.task('clean', function (cb) {
-    return del(['tmp', 'dist'], cb);
+    return del(['tmp', 'dist', 'coverage'], cb);
 });
 
 gulp.task('build-standalone', function () {
-    var jsFileName =  projectName;
+    var jsFileName = projectName;
     return buildJs('./standalone.index.js', standaloneName, jsFileName, "dist/standalone", false, true)
 });
 
 gulp.task('build-module', function () {
-    var jsFileName =  projectName;
+    var jsFileName = projectName;
     var b = browserify({
         debug: true,
     })
-        .require('./index.js', {expose: projectName} )
+        .require('./index.js', {expose: projectName})
         .external(sdDependencies);
     return finishBrowserifyBuild(b, jsFileName, "dist")
 });
 
 gulp.task('build-vendor', function () {
-    return buildJsDependencies(projectName+"-vendor", vendorDependencies, "dist")
+    return buildJsDependencies(projectName + "-vendor", vendorDependencies, "dist")
 });
 
-gulp.task('build', gulp.parallel('build-standalone', 'build-module' ,'build-vendor'));
+gulp.task('build', gulp.parallel('build-standalone', 'build-module', 'build-vendor'));
 
 gulp.task('build-clean', gulp.series('clean', 'build'));
 
@@ -89,8 +90,7 @@ gulp.task('doc', function () {
 gulp.task('default', gulp.series(gulp.parallel('build-clean', 'doc'), 'test'));
 
 
-
-function runTest(singleRun, done){
+function runTest(singleRun, done) {
     return new Server({
         configFile: __dirname + '/karma.conf.js',
         singleRun: singleRun
@@ -100,8 +100,8 @@ function runTest(singleRun, done){
 }
 
 
-function buildJs(src, standaloneName,  jsFileName, dest, external, failOnError) {
-    if(!external){
+function buildJs(src, standaloneName, jsFileName, dest, external, failOnError) {
+    if (!external) {
         external = []
     }
 
@@ -113,15 +113,15 @@ function buildJs(src, standaloneName,  jsFileName, dest, external, failOnError) 
         packageCache: {},
         standalone: standaloneName
     }).transform(stringify, {
-        appliesTo: { includeExtensions: ['.html'] }
+        appliesTo: {includeExtensions: ['.html']}
     })
-    // .plugin(resolutions, '*')
+        // .plugin(resolutions, '*')
         .external(external)
 
-    return finishBrowserifyBuild(b,jsFileName, dest, failOnError)
+    return finishBrowserifyBuild(b, jsFileName, dest, failOnError)
 }
 
-function buildJsDependencies(jsFileName, moduleNames, dest, failOnError){
+function buildJsDependencies(jsFileName, moduleNames, dest, failOnError) {
     var b = browserify({
         debug: true,
         require: [moduleNames]
@@ -130,30 +130,30 @@ function buildJsDependencies(jsFileName, moduleNames, dest, failOnError){
     return finishBrowserifyBuild(b, jsFileName, dest, failOnError)
 }
 
-function finishBrowserifyBuild(b, jsFileName, dest, failOnError){
+function finishBrowserifyBuild(b, jsFileName, dest, failOnError) {
     var pipe = b
-        .transform("babelify", {presets: ["@babel/preset-env"],  plugins: ["transform-class-properties", "transform-object-assign", ["transform-builtin-extend", {globals: ["Error"]}]]})
+        .transform("babelify", browserifyTransforms['babelify'])
         .bundle();
-    if(!failOnError){
-        pipe = pipe.on('error', map_error )
-            .pipe(plugins.plumber({ errorHandler: onError }))
+    if (!failOnError) {
+        pipe = pipe.on('error', map_error)
+            .pipe(plugins.plumber({errorHandler: onError}))
     }
 
 
-    pipe = pipe.pipe(source(jsFileName+'.js'))
+    pipe = pipe.pipe(source(jsFileName + '.js'))
         .pipe(gulp.dest(dest))
         .pipe(buffer());
 
     var development = (argv.dev === undefined) ? false : true;
-    if(!development){
+    if (!development) {
         pipe.pipe(sourcemaps.init({loadMaps: true}))
-        // .pipe(plugins.stripDebug())
+            // .pipe(plugins.stripDebug())
             .pipe(plugins.uglify({
                 compress: {
                     // drop_console: true
                 }
             }))
-            .pipe(plugins.rename({ extname: '.min.js' }))
+            .pipe(plugins.rename({extname: '.min.js'}))
 
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest(dest));
