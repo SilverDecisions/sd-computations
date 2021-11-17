@@ -94,6 +94,17 @@
         },
         "treeFile": "treatments.json",
         "csvFile": "mcdm-leaguetable3.csv"
+      },
+      {
+        "params":{
+          "ruleName": "max-min",
+          "weightLowerBound": 1,
+          "defaultWeight": 1,
+          "weightUpperBound": 1,
+          "extendedPolicyDescription": false
+        },
+        "treeFile": "mcdm3.json",
+        "csvFile": "mcdm3-leaguetable.csv"
       }
     ]
 }

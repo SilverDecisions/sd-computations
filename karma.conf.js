@@ -1,5 +1,5 @@
 var p = require('./package.json');
-var projectName= "sd-computations";
+var projectName= p.name;
 var dependencies = [];
 var vendorDependencies = [];
 var sdDependencies = [];

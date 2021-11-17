@@ -3,7 +3,6 @@ import {JOB_STATUS} from "../../../engine/job-status";
 import {PoliciesCollector} from "../../../../policies/policies-collector";
 import {ExpressionEngine} from "sd-expression-engine";
 import {TreeValidator} from "../../../../validation/tree-validator";
-import {Policy} from "../../../../policies/policy";
 
 export class CalculateStep extends Step {
     constructor(jobRepository, expressionsEvaluator, objectiveRulesManager) {
@@ -86,43 +85,36 @@ export class CalculateStep extends Step {
             }
         });
 
-        cmp= (a, b) => a < b;
+        cmp = (a, b) => a < b;
         if(payoffCoeffs[0] > 0 && payoffCoeffs[1] < 0){
-            cmp= (a, b) => a < b;
+            cmp = (a, b) => a < b;
         }else if(payoffCoeffs[0] < 0 && payoffCoeffs[1] > 0){
-            cmp= (a, b) => a < b;
+            cmp = (a, b) => a < b;
         }else if(payoffCoeffs[1]<0){
-            cmp= (a, b) => a > b;
+            cmp = (a, b) => a > b;
         }
 
-        let prev2NotDominated = null;
+        const notDominated = rows.filter(r => !r.dominatedBy).sort((a, b) => (payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0])));
+        if (notDominated.length) {
 
+            notDominated[0].incratio = 0
+            let i = 1;
+            while (i < notDominated.length && notDominated.length > 1) {
+                let current = notDominated[i];
+                let prev = notDominated[i - 1];
 
-        rows.filter(r=>!r.dominatedBy).sort((a, b)=>(  payoffCoeffs[0] * (a.payoffs[0] - b.payoffs[0]))).forEach((r, i, arr)=> {
-            if (!i) {
-                r.incratio = 0;
-                return;
+                current.incratio = this.computeICER(current, prev);
+
+                if (cmp(current.incratio, prev.incratio)) {
+                    prev.incratio = null;
+                    prev.extendedDominatedBy = [notDominated[i - 2].id, current.id];
+                    notDominated.splice(i - 1, 1);
+                    i--;
+                } else {
+                    i++;
+                }
             }
-
-            let prev = arr[i - 1];
-
-            r.incratio = this.computeICER(r, prev);
-            if (i < 2) {
-                return;
-            }
-
-            if(!prev2NotDominated){
-                prev2NotDominated = arr[i - 2];
-            }
-
-            if(cmp(r.incratio,prev.incratio)){
-                prev.incratio = null;
-                prev.extendedDominatedBy = [prev2NotDominated.id, r.id] ;
-                r.incratio = this.computeICER(r, prev2NotDominated);
-            }else{
-                prev2NotDominated = prev;
-            }
-        });
+        }
 
         let weightLowerBound = params.value("weightLowerBound");
         let defaultWeight = params.value("defaultWeight");
