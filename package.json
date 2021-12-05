@@ -36,7 +36,9 @@
         "babelify",
         {
           "global": true,
-          "ignore": ["/\\/node_modules\\/(?!idb\\/)/"],
+          "ignore": [
+            "/\\/node_modules\\/(?!idb\\/)/"
+          ],
           "presets": [
             "@babel/preset-env"
           ],
@@ -100,7 +102,7 @@
   },
   "dependencies": {
     "idb": "^6.1.4",
-    "sd-expression-engine": "~0.1.16",
+    "sd-expression-engine": "~0.1.17",
     "sd-model": "~0.2.11",
     "sd-random": "^0.1.4",
     "sd-utils": "^0.1.15"
