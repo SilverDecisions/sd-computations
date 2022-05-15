@@ -9,6 +9,7 @@ export class PayoffsTransformationJobParameters extends JobParameters {
         this.definitions.push(new JobParameterDefinition("functionName", PARAMETER_TYPE.STRING).set('required', true));
         this.definitions.push(new JobParameterDefinition("functionBody", PARAMETER_TYPE.STRING).set('required', true));
         this.definitions.push(new JobParameterDefinition("functionArgumentName", PARAMETER_TYPE.STRING).set('required', true));
+        this.definitions.push(new JobParameterDefinition("payoffIndex", PARAMETER_TYPE.INTEGER).set('required', false));
         this.definitions.push(new JobParameterDefinition("makeClone", PARAMETER_TYPE.BOOLEAN));
     }
 
