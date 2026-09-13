@@ -126,7 +126,7 @@ export class ObjectiveRule {
             this.cValue(node, 'aggregatedPayoff'+ '[' + this.payoffIndex + ']', aggregatedPayoff);
             this.cValue(node, 'probabilityToEnter', 0); //initial value
         } else {
-            this.cValue(node, 'childrenPayoff' + '[' + this.payoffIndex + ']', childrenPayoff);
+            this.cValue(node, 'childrenPayoff' + '[' + this.payoffIndex + ']', this.add(childrenPayoff, aggregatedPayoff));
         }
 
         return this.computedPayoff(node, payoff);
