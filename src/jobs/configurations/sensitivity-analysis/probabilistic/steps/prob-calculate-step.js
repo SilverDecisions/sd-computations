@@ -109,13 +109,15 @@ export class ProbCalculateStep extends CalculateStep {
 
 
     // The expected value of a policy is the mean of its payoffs over the runs,
-    // computed from the payoffs of the rows (the JS numbers of the computed
-    // payoffs, each within half an ulp): their exact sum, correctly rounded (at a
-    // scale where it cannot overflow), divided by the number of runs. The error is at
-    // most 2^-53 of the mean absolute payoff plus one rounding of the result,
-    // whatever the number of runs and their order. (Accumulating
-    // add(expectedValue, divide(payoff, numberOfRuns)) with exact Fractions grows
-    // without limit: thousands of digits after 1000 runs.)
+    // computed from the payoffs stored in the rows (toFloat of the computed payoffs;
+    // 'n/a' counts as 0) with ComputationsUtils.exactMean: the double nearest to the
+    // exact mean of those doubles (one rounding, for any order, cancellation or
+    // magnitude, finite whenever that mean is). Relative to the computed payoffs
+    // themselves the error adds the conversion of each payoff to a double in the row
+    // (Math.js 15 engine: correctly rounded, at most 2^-53 of its magnitude; 0.1.17:
+    // the double of its Fraction). (Accumulating add(expectedValue,
+    // divide(payoff, numberOfRuns)) with exact Fractions grows without limit:
+    // thousands of digits after 1000 runs.)
     postProcess(stepExecution, jobResult) {
         var numberOfRuns = stepExecution.getJobParameters().value("numberOfRuns");
         var payoffsPerPolicy = jobResult.data.policies.map(()=>[]);

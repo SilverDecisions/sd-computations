@@ -2,8 +2,8 @@ import {ComputationsManager} from '../../src/computations-manager'
 import {ComputationsUtils} from '../../src/computations-utils'
 import {DataModel} from "sd-model";
 
-// Expected values of the probabilistic sensitivity analysis: the exact sum of the
-// payoffs of the rows, correctly rounded, divided by the number of runs.
+// Expected values of the probabilistic sensitivity analysis: the double nearest to the
+// exact mean of the payoffs stored in the rows (one rounding).
 
 let fixtures = jasmine.getFixtures();
 
@@ -33,12 +33,25 @@ function babs(v) {
     return v < BigInt(0) ? -v : v;
 }
 
-// distance to the next double away from zero
-function ulp(x) {
+// the neighbouring doubles of a finite x (towards -Infinity and +Infinity)
+function neighbours(x) {
     let view = new DataView(new ArrayBuffer(8));
-    view.setFloat64(0, Math.abs(x));
-    view.setBigUint64(0, view.getBigUint64(0) + BigInt(1));
-    return view.getFloat64(0) - Math.abs(x);
+    let step = (v, up) => {
+        if (v === 0) {
+            return up ? Number.MIN_VALUE : -Number.MIN_VALUE;
+        }
+        view.setFloat64(0, v);
+        let bits = view.getBigUint64(0);
+        view.setBigUint64(0, (v > 0) === up ? bits + BigInt(1) : bits - BigInt(1));
+        return view.getFloat64(0);
+    };
+    return [step(x, false), step(x, true)];
+}
+
+// true if the double x is (one of) the nearest to S * 2^-1074 / n
+function isNearest(x, S, n) {
+    let dist = v => babs(scaled(v) * BigInt(n) - S);
+    return neighbours(x).every(v => !isFinite(v) || dist(x) <= dist(v));
 }
 
 // deterministic permutation (Fisher-Yates with a fixed linear congruential generator)
@@ -70,43 +83,78 @@ describe("ComputationsUtils.exactSum and exactMean", () => {
         });
     });
 
-    it("exactMean is within one rounding of the correctly rounded mean and finite when the mean is", () => {
+    it("exactMean is the correctly rounded mean (finite whenever it is in the range)", () => {
+        expect(cases.filter(c => c.note.indexOf('remainder') >= 0).length).toBeGreaterThan(300);
         cases.filter(c => c.mean).forEach(c => {
             let values = c.values.map(fromHex);
-            let mean = ComputationsUtils.exactMean(values);
+            let mean = ComputationsUtils.exactMean(values, c.count);
             let expected = fromHex(c.mean);
-            expect(isFinite(mean)).toBe(isFinite(expected), c.note);
-            expect(Object.is(mean, expected) || Math.abs(mean - expected) <= ulp(expected)).toBe(true, c.note + ': ' + mean + ' expected ' + expected);
+            expect(Object.is(mean, expected)).toBe(true, c.note + ': ' + mean + ' expected ' + expected);
         });
+    });
+
+    it("keeps small terms after the cancellation of large ones", () => {
+        [[1e308, -1e308, 1e-305], [1e-305, 1e308, -1e308], [-1e308, 1e-305, 1e308]].forEach(values => {
+            expect(ComputationsUtils.exactSum(values)).toBe(1e-305, JSON.stringify(values));
+            expect(ComputationsUtils.exactMean(values)).toBe(3.3333333333333333e-306, JSON.stringify(values));
+        });
+        expect(ComputationsUtils.exactMean([1e308, -1e308, 1e-300])).toBe(3.3333333333333334e-301);
+        expect(ComputationsUtils.exactSum([Number.MAX_VALUE, -Number.MAX_VALUE, Number.MIN_VALUE])).toBe(Number.MIN_VALUE);
     });
 
     it("results do not depend on the order of the values", () => {
         cases.forEach((c, i) => {
             let values = c.values.map(fromHex);
             let sum = ComputationsUtils.exactSum(values);
-            let mean = ComputationsUtils.exactMean(values);
+            let mean = ComputationsUtils.exactMean(values, c.count);
             [values.slice().reverse(), shuffled(values, i + 1), shuffled(values, i + 1000)].forEach(order => {
                 expect(Object.is(ComputationsUtils.exactSum(order), sum)).toBe(true, c.note + ' sum');
-                expect(Object.is(ComputationsUtils.exactMean(order), mean)).toBe(true, c.note + ' mean');
+                expect(Object.is(ComputationsUtils.exactMean(order, c.count), mean)).toBe(true, c.note + ' mean');
             });
         });
     });
 
-    it("probabilistic analysis postProcess: finite means of payoffs whose sum is beyond the range", () => {
+    describe("probabilistic analysis postProcess", () => {
         let job = new ComputationsManager({}).getJobByName("probabilistic-sensitivity-analysis");
         let step = job.steps.find(s => s.postProcess && s.updatePolicyStats);
-        let run = (payoffs) => {
-            let jobResult = {data: {policies: [{}], rows: payoffs.map(p => ({policyIndex: 0, variables: [], payoff: p}))}};
-            step.postProcess({getJobParameters: () => ({value: name => name === "numberOfRuns" ? payoffs.length : null})}, jobResult);
-            return jobResult.data.expectedValues[0];
+        // rows of the policies (payoffs[policy][run]) as the calculate step stores them
+        let run = (payoffs, numberOfRuns) => {
+            let rows = [];
+            payoffs[0].forEach((p, r) => payoffs.forEach((policyPayoffs, i) => {
+                if (r < policyPayoffs.length) {
+                    rows.push({policyIndex: i, variables: [r], payoff: policyPayoffs[r]});
+                }
+            }));
+            let jobResult = {data: {policies: payoffs.map(() => ({})), rows: rows}};
+            step.postProcess({getJobParameters: () => ({value: name => name === "numberOfRuns" ? numberOfRuns : null})}, jobResult);
+            return jobResult.data.expectedValues;
         };
-        expect(run([1e308, 1e308])).toBe(1e308);
-        expect(run([-1e308, -1e308])).toBe(-1e308);
-        [[1e308, 1e308, -1e308], [1e308, -1e308, 1e308], [-1e308, 1e308, 1e308]].forEach(order => {
-            expect(run(order)).toBe(1e308 / 3, JSON.stringify(order));
+
+        it("expected values = references of all cases (Python Fraction)", () => {
+            cases.filter(c => c.mean && c.values.length).forEach(c => {
+                let values = c.values.map(fromHex);
+                let expected = fromHex(c.mean);
+                let ev = run([values, values.map(v => -v)], c.count || values.length);
+                expect(Object.is(ev[0], expected)).toBe(true, c.note + ': ' + ev[0] + ' expected ' + expected);
+                // the negated payoffs: -expected (-0 for a negative mean below half of 2^-1074), +0 for an exact 0
+                let negated = fromHex(c.sum) === 0 ? 0 : -expected;
+                expect(Object.is(ev[1], negated)).toBe(true, c.note + ' (negated): ' + ev[1]);
+            });
         });
-        // 'n/a' payoffs count as 0; 2 MAX / 3 correctly rounded (Python Fraction): 1.1984620899082105e308
-        expect(run([Number.MAX_VALUE, Number.MAX_VALUE, 'n/a'])).toBe(1.1984620899082105e308);
+
+        it("small remainders of cancelling payoffs, beyond the range, 'n/a'", () => {
+            [[1e308, -1e308, 1e-305], [1e-305, 1e308, -1e308], [-1e308, 1e-305, 1e308]].forEach(order => {
+                expect(run([order], 3)).toEqual([3.3333333333333333e-306], JSON.stringify(order));
+            });
+            expect(run([[1e308, -1e308, 1e-300]], 3)).toEqual([3.3333333333333334e-301]);
+            expect(run([[1e308, 1e308]], 2)).toEqual([1e308]);
+            expect(run([[-1e308, -1e308]], 2)).toEqual([-1e308]);
+            [[1e308, 1e308, -1e308], [1e308, -1e308, 1e308], [-1e308, 1e308, 1e308]].forEach(order => {
+                expect(run([order], 3)).toEqual([1e308 / 3], JSON.stringify(order));
+            });
+            // 'n/a' payoffs count as 0; 2 MAX / 3 correctly rounded (Python Fraction): 1.1984620899082105e308
+            expect(run([[Number.MAX_VALUE, Number.MAX_VALUE, 'n/a']], 3)).toEqual([1.1984620899082105e308]);
+        });
     });
 
     it("handles infinite and NaN values", () => {
@@ -179,7 +227,7 @@ describe("ComputationsUtils.exactSum and exactMean", () => {
             console.log('PSA ' + numberOfRuns + ' runs ' + managerConf.name + ': ' + duration + ' ms');
         });
 
-        it("expected value = mean of the payoffs of the rows within one rounding", () => {
+        it("expected value = the double nearest to the exact mean of the payoffs of the rows", () => {
             let rowsPerPolicy = jobResult.data.policies.map(() => []);
             jobResult.data.rows.forEach(row => rowsPerPolicy[row.policyIndex].push(typeof row.payoff === 'string' ? 0 : row.payoff));
             jobResult.data.expectedValues.forEach((ev, i) => {
@@ -187,9 +235,7 @@ describe("ComputationsUtils.exactSum and exactMean", () => {
                 expect(typeof ev).toBe('number');
                 // exact: S = sum of the payoffs * 2^1074, mean = S / (runs * 2^1074)
                 let S = rowsPerPolicy[i].reduce((acc, p) => acc + scaled(p), BigInt(0));
-                let E = scaled(ev) * BigInt(numberOfRuns);
-                // |ev - mean| <= 2^-52 |mean| (two roundings of half an ulp each), cross-multiplied
-                expect(babs(E - S) * (BigInt(1) << BigInt(52)) <= babs(S)).toBe(true, 'policy ' + i + ': ' + ev);
+                expect(isNearest(ev, S, numberOfRuns)).toBe(true, 'policy ' + i + ': ' + ev);
             });
         });
     });
