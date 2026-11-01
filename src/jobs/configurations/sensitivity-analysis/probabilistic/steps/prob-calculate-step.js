@@ -2,6 +2,7 @@ import {Utils} from "sd-utils";
 import {ExpressionEngine} from "sd-expression-engine";
 import {CalculateStep} from "../../n-way/steps/calculate-step";
 import {JobComputationException} from "../../../../engine/exceptions/job-computation-exception";
+import {ComputationsUtils} from "../../../../../computations-utils";
 
 export class ProbCalculateStep extends CalculateStep {
 
@@ -95,8 +96,6 @@ export class ProbCalculateStep extends CalculateStep {
             }else if(payoff.equals(highestPayoff)){
                 bestPolicyIndexes.push(i)
             }
-
-            jobResult.data.expectedValues[i] = ExpressionEngine.add(jobResult.data.expectedValues[i], ExpressionEngine.divide(payoff, numberOfRuns));
         });
 
         bestPolicyIndexes.forEach(policyIndex=>{
@@ -109,8 +108,20 @@ export class ProbCalculateStep extends CalculateStep {
     }
 
 
+    // The expected value of a policy is the mean of its payoffs over the runs,
+    // computed from the payoffs of the rows (the JS numbers of the computed
+    // payoffs, each within half an ulp): their exact sum, correctly rounded, divided
+    // by the number of runs. The error is at most 2^-53 of the mean absolute payoff
+    // plus one rounding of the result, whatever the number of runs. (Accumulating
+    // add(expectedValue, divide(payoff, numberOfRuns)) with exact Fractions grows
+    // without limit: thousands of digits after 1000 runs.)
     postProcess(stepExecution, jobResult) {
-        jobResult.data.expectedValues = jobResult.data.expectedValues.map(v=>this.toFloat(v));
+        var numberOfRuns = stepExecution.getJobParameters().value("numberOfRuns");
+        var payoffsPerPolicy = jobResult.data.policies.map(()=>[]);
+        jobResult.data.rows.forEach(row=> {
+            payoffsPerPolicy[row.policyIndex].push(Utils.isString(row.payoff) ? 0 : row.payoff);
+        });
+        jobResult.data.expectedValues = payoffsPerPolicy.map(payoffs=>ComputationsUtils.exactSum(payoffs) / numberOfRuns);
     }
 
 
