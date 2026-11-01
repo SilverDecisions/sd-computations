@@ -3,6 +3,7 @@ import {JOB_STATUS} from "./job-status";
 import {Utils, log} from "sd-utils";
 import {JobParametersInvalidException} from "./exceptions/job-parameters-invalid-exception";
 import {JobDataInvalidException} from "./exceptions/job-data-invalid-exception";
+import {JobExpressionSemanticsException} from "./exceptions/job-expression-semantics-exception";
 
 export class JobLauncher {
 
@@ -95,10 +96,11 @@ export class JobLauncher {
                 throw new JobRestartException("JobExecution [" + jobExecution.id + "] already started");
             }
 
-            // e.g. a worker with another expression engine than the page that created the execution
+            // e.g. a worker with another expression engine or configuration than the page that
+            // created the execution: nothing is computed, JobsManager.onJobFatalError ends the execution
             if (!this.jobRepository.isResumableWithCurrentSemantics(jobExecution)) {
-                throw new JobRestartException("JobExecution [" + jobExecution.id + "] was created for expression semantics "
-                    + this.jobRepository.getExpressionSemantics(jobExecution) + ", the current ones are " + this.jobRepository.expressionSemantics);
+                throw new JobExpressionSemanticsException("JobExecution [" + jobExecution.id + "] was created for expression semantics "
+                    + this.jobRepository.getExpressionSemantics(jobExecution) + ", the current ones are " + this.jobRepository.getCurrentExpressionSemantics());
             }
 
             var jobName = jobExecution.jobInstance.jobName;

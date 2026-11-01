@@ -52,7 +52,7 @@ module.exports = function (config) {
                 watched:  true,
                 served:   true,
                 included: false },
-            { pattern:  'test/job-worker.worker.js',
+            { pattern:  'test/*.worker.js',
                 watched:  true,
                 served:   true,
                 included: false }

@@ -1,5 +1,5 @@
 import {Utils, log} from "sd-utils";
-import {ExpressionEngine} from "sd-expression-engine";
+import {currentExpressionSemantics} from "./engine/expression-semantics";
 import {SensitivityAnalysisJob} from "./configurations/sensitivity-analysis/n-way/sensitivity-analysis-job";
 import {JobLauncher} from "./engine/job-launcher";
 import {JobWorker} from "./job-worker";
@@ -61,7 +61,8 @@ export class JobsManager extends JobExecutionListener {
         }
 
         this.initRepository();
-        this.jobRepository.expressionSemantics = JobsManager.expressionSemantics();
+        // taken each time it is needed: the Math.js configuration can change
+        this.jobRepository.expressionSemanticsProvider = currentExpressionSemantics;
 
         this.registerJobs();
 
@@ -91,11 +92,6 @@ export class JobsManager extends JobExecutionListener {
                 this.config.repositoryType = 'idb';
                 this.initRepository()
         }
-    }
-
-    /*semantics of the expressions of the installed sd-expression-engine: its Math.js major version*/
-    static expressionSemantics() {
-        return "mathjs-" + parseInt(ExpressionEngine.eval("version", false), 10);
     }
 
     serializeData(data) {
@@ -242,16 +238,19 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
+    // listeners may deregister themselves (JobInstanceManager does when its job
+    // completes): iterate over a copy so that none is skipped
     beforeJob(jobExecution) {
         log.debug("beforeJob", this.useWorker, jobExecution);
-        this.jobExecutionListeners.forEach(l=>l.beforeJob(jobExecution));
+        this.jobExecutionListeners.slice().forEach(l=>l.beforeJob(jobExecution));
     }
 
     afterJob(jobExecution) {
         log.debug("afterJob", this.useWorker, jobExecution);
-        this.jobExecutionListeners.forEach(l=>l.afterJob(jobExecution));
+        this.jobExecutionListeners.slice().forEach(l=>l.afterJob(jobExecution));
         var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecution.id];
         if (promiseResolve) {
+            delete this.afterJobExecutionPromiseResolves[jobExecution.id];
             promiseResolve(jobExecution)
         }
 
@@ -260,24 +259,39 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
+    /*The worker could not execute a job execution (e.g. it was refused for other expression
+     * semantics, or not found): nothing of the job ran there, so the execution is ended here
+     * (FAILED, endTime, the error) and saved, and the listeners and a pending run(...) promise
+     * get it as for any failed job. The job instance can then be run again.*/
     onJobFatalError(jobExecutionId, error){
-        var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecutionId];
-        if (promiseResolve) {
-            this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
-                jobExecution.status = JOB_STATUS.FAILED;
-                if(error){
-                    jobExecution.failureExceptions.push(error);
-                }
-
-                return this.jobRepository.saveJobExecution(jobExecution).then(()=>{
-                    promiseResolve(jobExecution);
-                })
-            }).catch(e=>{
-                log.error(e);
-            })
-
-        }
         log.debug('onJobFatalError', jobExecutionId, error);
+        return this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
+            if (!jobExecution) {
+                log.error("Job execution not found after a fatal error in the worker: " + jobExecutionId, error);
+                var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecutionId];
+                if (promiseResolve) {
+                    delete this.afterJobExecutionPromiseResolves[jobExecutionId];
+                    promiseResolve(null);
+                }
+                return null;
+            }
+            if (!jobExecution.isRunning()) {
+                // already ended by the job (its listeners were notified)
+                return jobExecution;
+            }
+            jobExecution.status = JOB_STATUS.FAILED;
+            jobExecution.exitStatus = JOB_STATUS.FAILED;
+            if(error){
+                jobExecution.failureExceptions.push(error);
+            }
+            jobExecution.endTime = new Date();
+            return this.jobRepository.saveJobExecution(jobExecution).then(()=>{
+                this.afterJob(jobExecution);
+                return jobExecution;
+            });
+        }).catch(e=>{
+            log.error(e);
+        });
     }
 
 
