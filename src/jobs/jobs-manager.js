@@ -1,4 +1,5 @@
 import {Utils, log} from "sd-utils";
+import {ExpressionEngine} from "sd-expression-engine";
 import {SensitivityAnalysisJob} from "./configurations/sensitivity-analysis/n-way/sensitivity-analysis-job";
 import {JobLauncher} from "./engine/job-launcher";
 import {JobWorker} from "./job-worker";
@@ -60,6 +61,7 @@ export class JobsManager extends JobExecutionListener {
         }
 
         this.initRepository();
+        this.jobRepository.expressionSemantics = JobsManager.expressionSemantics();
 
         this.registerJobs();
 
@@ -89,6 +91,11 @@ export class JobsManager extends JobExecutionListener {
                 this.config.repositoryType = 'idb';
                 this.initRepository()
         }
+    }
+
+    /*semantics of the expressions of the installed sd-expression-engine: its Math.js major version*/
+    static expressionSemantics() {
+        return "mathjs-" + parseInt(ExpressionEngine.eval("version", false), 10);
     }
 
     serializeData(data) {

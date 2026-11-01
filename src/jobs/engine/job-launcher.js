@@ -54,7 +54,8 @@ export class JobLauncher {
 
     validate(job, jobParameters, data){
         return this.jobRepository.getLastJobExecution(job.name, jobParameters).then(lastExecution=>{
-            if (lastExecution != null) {
+            // an execution of other expression semantics is not resumed (a new instance is started)
+            if (lastExecution != null && this.jobRepository.isResumableWithCurrentSemantics(lastExecution)) {
                 if (!job.isRestartable) {
                     throw new JobRestartException("JobInstance already exists and is not restartable");
                 }
@@ -92,6 +93,12 @@ export class JobLauncher {
 
             if (jobExecution.status !== JOB_STATUS.STARTING) {
                 throw new JobRestartException("JobExecution [" + jobExecution.id + "] already started");
+            }
+
+            // e.g. a worker with another expression engine than the page that created the execution
+            if (!this.jobRepository.isResumableWithCurrentSemantics(jobExecution)) {
+                throw new JobRestartException("JobExecution [" + jobExecution.id + "] was created for expression semantics "
+                    + this.jobRepository.getExpressionSemantics(jobExecution) + ", the current ones are " + this.jobRepository.expressionSemantics);
             }
 
             var jobName = jobExecution.jobInstance.jobName;

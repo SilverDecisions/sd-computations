@@ -9,6 +9,12 @@ export class SimpleJobRepository extends JobRepository{
     executionFlags = {};
     jobResults = [];
 
+    moveJobInstanceKey(key, newKey, jobInstance){
+        this.jobInstancesByKey[newKey] = jobInstance;
+        delete this.jobInstancesByKey[key];
+        return Promise.resolve();
+    }
+
     removeJobInstance(jobInstance){
         Utils.forOwn(this.jobInstancesByKey,  (ji, key)=>{
             if(ji===jobInstance){
