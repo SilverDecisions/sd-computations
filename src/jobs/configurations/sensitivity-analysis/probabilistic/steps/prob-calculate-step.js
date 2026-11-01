@@ -110,9 +110,10 @@ export class ProbCalculateStep extends CalculateStep {
 
     // The expected value of a policy is the mean of its payoffs over the runs,
     // computed from the payoffs of the rows (the JS numbers of the computed
-    // payoffs, each within half an ulp): their exact sum, correctly rounded, divided
-    // by the number of runs. The error is at most 2^-53 of the mean absolute payoff
-    // plus one rounding of the result, whatever the number of runs. (Accumulating
+    // payoffs, each within half an ulp): their exact sum, correctly rounded (at a
+    // scale where it cannot overflow), divided by the number of runs. The error is at
+    // most 2^-53 of the mean absolute payoff plus one rounding of the result,
+    // whatever the number of runs and their order. (Accumulating
     // add(expectedValue, divide(payoff, numberOfRuns)) with exact Fractions grows
     // without limit: thousands of digits after 1000 runs.)
     postProcess(stepExecution, jobResult) {
@@ -121,7 +122,7 @@ export class ProbCalculateStep extends CalculateStep {
         jobResult.data.rows.forEach(row=> {
             payoffsPerPolicy[row.policyIndex].push(Utils.isString(row.payoff) ? 0 : row.payoff);
         });
-        jobResult.data.expectedValues = payoffsPerPolicy.map(payoffs=>ComputationsUtils.exactSum(payoffs) / numberOfRuns);
+        jobResult.data.expectedValues = payoffsPerPolicy.map(payoffs=>ComputationsUtils.exactMean(payoffs, numberOfRuns));
     }
 
 

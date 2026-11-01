@@ -33,18 +33,80 @@ function babs(v) {
     return v < BigInt(0) ? -v : v;
 }
 
-describe("ComputationsUtils.exactSum", () => {
-    it("gives the correctly rounded sum (reference: Python math.fsum, test/data/exact-sum-cases.py)", () => {
-        fixtures.fixturesPath = "base/test/";
-        let cases = JSON.parse(readFixtures("data/exact-sum-cases.json")).cases;
-        expect(cases.length).toBeGreaterThan(30);
+// distance to the next double away from zero
+function ulp(x) {
+    let view = new DataView(new ArrayBuffer(8));
+    view.setFloat64(0, Math.abs(x));
+    view.setBigUint64(0, view.getBigUint64(0) + BigInt(1));
+    return view.getFloat64(0) - Math.abs(x);
+}
+
+// deterministic permutation (Fisher-Yates with a fixed linear congruential generator)
+function shuffled(values, seed) {
+    let s = seed;
+    let copy = values.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+        s = (s * 1103515245 + 12345) % 2147483648;
+        let j = s % (i + 1);
+        let t = copy[i];
+        copy[i] = copy[j];
+        copy[j] = t;
+    }
+    return copy;
+}
+
+describe("ComputationsUtils.exactSum and exactMean", () => {
+    // reference: exact Fraction arithmetic in Python (test/data/exact-sum-cases.py), including
+    // sums beyond the double range of both signs, cancellations and every order of them
+    fixtures.fixturesPath = "base/test/";
+    let cases = JSON.parse(readFixtures("data/exact-sum-cases.json")).cases;
+
+    it("exactSum is the correctly rounded sum, +-Infinity only when the exact sum is beyond the range", () => {
+        expect(cases.length).toBeGreaterThan(100);
         cases.forEach(c => {
             let values = c.values.map(fromHex);
             let sum = ComputationsUtils.exactSum(values);
             expect(Object.is(sum, fromHex(c.sum))).toBe(true, c.note + ': ' + sum + ' expected ' + fromHex(c.sum));
-            // independent of the order
-            expect(Object.is(ComputationsUtils.exactSum(values.slice().reverse()), sum)).toBe(true, c.note + ' reversed');
         });
+    });
+
+    it("exactMean is within one rounding of the correctly rounded mean and finite when the mean is", () => {
+        cases.filter(c => c.mean).forEach(c => {
+            let values = c.values.map(fromHex);
+            let mean = ComputationsUtils.exactMean(values);
+            let expected = fromHex(c.mean);
+            expect(isFinite(mean)).toBe(isFinite(expected), c.note);
+            expect(Object.is(mean, expected) || Math.abs(mean - expected) <= ulp(expected)).toBe(true, c.note + ': ' + mean + ' expected ' + expected);
+        });
+    });
+
+    it("results do not depend on the order of the values", () => {
+        cases.forEach((c, i) => {
+            let values = c.values.map(fromHex);
+            let sum = ComputationsUtils.exactSum(values);
+            let mean = ComputationsUtils.exactMean(values);
+            [values.slice().reverse(), shuffled(values, i + 1), shuffled(values, i + 1000)].forEach(order => {
+                expect(Object.is(ComputationsUtils.exactSum(order), sum)).toBe(true, c.note + ' sum');
+                expect(Object.is(ComputationsUtils.exactMean(order), mean)).toBe(true, c.note + ' mean');
+            });
+        });
+    });
+
+    it("probabilistic analysis postProcess: finite means of payoffs whose sum is beyond the range", () => {
+        let job = new ComputationsManager({}).getJobByName("probabilistic-sensitivity-analysis");
+        let step = job.steps.find(s => s.postProcess && s.updatePolicyStats);
+        let run = (payoffs) => {
+            let jobResult = {data: {policies: [{}], rows: payoffs.map(p => ({policyIndex: 0, variables: [], payoff: p}))}};
+            step.postProcess({getJobParameters: () => ({value: name => name === "numberOfRuns" ? payoffs.length : null})}, jobResult);
+            return jobResult.data.expectedValues[0];
+        };
+        expect(run([1e308, 1e308])).toBe(1e308);
+        expect(run([-1e308, -1e308])).toBe(-1e308);
+        [[1e308, 1e308, -1e308], [1e308, -1e308, 1e308], [-1e308, 1e308, 1e308]].forEach(order => {
+            expect(run(order)).toBe(1e308 / 3, JSON.stringify(order));
+        });
+        // 'n/a' payoffs count as 0; 2 MAX / 3 correctly rounded (Python Fraction): 1.1984620899082105e308
+        expect(run([Number.MAX_VALUE, Number.MAX_VALUE, 'n/a'])).toBe(1.1984620899082105e308);
     });
 
     it("handles infinite and NaN values", () => {
