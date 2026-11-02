@@ -178,8 +178,9 @@ export class ComputationsUtils{
             top--;
         }
         if (top < 0) {
-            // delta * 2^(-1074 - 24 * fractionDigits) is below half of 2^-1074 when fractionDigits > 0
-            return 0;
+            // D = 0: an exact 0 is +0; a non-zero delta * 2^(-1074 - 24 * fractionDigits) is below
+            // half of 2^-1074 when fractionDigits > 0 and rounds to a zero of its sign
+            return negative && sticky ? -0 : 0;
         }
         var bits = top * BITS;
         while (Math.pow(2, bits - top * BITS) <= digits[top]) {

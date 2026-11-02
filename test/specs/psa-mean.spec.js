@@ -157,6 +157,14 @@ describe("ComputationsUtils.exactSum and exactMean", () => {
         });
     });
 
+    it("keeps the sign of a non-zero mean that rounds to zero, +0 for an exact zero", () => {
+        expect(Object.is(ComputationsUtils.exactMean([-Number.MIN_VALUE], Math.pow(2, 25)), -0)).toBe(true, "negative");
+        expect(Object.is(ComputationsUtils.exactMean([Number.MIN_VALUE], Math.pow(2, 25)), 0)).toBe(true, "positive");
+        expect(Object.is(ComputationsUtils.exactMean([1e308, -1e308, Number.MIN_VALUE, -Number.MIN_VALUE]), 0)).toBe(true, "exact zero, mean");
+        expect(Object.is(ComputationsUtils.exactSum([1e308, -1e308, Number.MIN_VALUE, -Number.MIN_VALUE]), 0)).toBe(true, "exact zero, sum");
+        expect(Object.is(ComputationsUtils.exactMean([-1e308, 1e308], 2), 0)).toBe(true, "exact zero, negative terms first");
+    });
+
     it("handles infinite and NaN values", () => {
         expect(ComputationsUtils.exactSum([1, Infinity])).toBe(Infinity);
         expect(ComputationsUtils.exactSum([-Infinity, 1])).toBe(-Infinity);
