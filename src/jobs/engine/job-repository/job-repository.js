@@ -1,6 +1,6 @@
 import {JobKeyGenerator} from "../job-key-generator";
 import {JobInstance} from "../job-instance";
-import {Utils} from "sd-utils";
+import {Utils, log} from "sd-utils";
 import {JobExecution} from "../job-execution";
 import {JobExecutionAlreadyRunningException} from "../exceptions/job-execution-already-running-exception";
 import {JOB_STATUS} from "../job-status";
@@ -9,10 +9,18 @@ import {ExecutionContext} from "../execution-context";
 import {StepExecution} from "../step-execution";
 import {DataModel} from "sd-model";
 import {JobResult} from "../job-result";
+import {LEGACY_EXPRESSION_SEMANTICS} from "../expression-semantics";
+
+// Execution context key of the semantics profile; restartable jobs continue only under the same profile.
+export const EXPRESSION_SEMANTICS_KEY = "expressionSemantics";
+export {LEGACY_EXPRESSION_SEMANTICS};
 
 export class JobRepository {
 
     jobByName = {};
+
+    // set by JobsManager; null: profiles are neither recorded nor checked
+    expressionSemanticsProvider = null;
 
     registerJob(job) {
         this.jobByName[job.name] = job;
@@ -117,6 +125,35 @@ export class JobRepository {
         return jobName + "|" + JobKeyGenerator.generateKey(jobParameters);
     }
 
+    getCurrentExpressionSemantics() {
+        return this.expressionSemanticsProvider ? this.expressionSemanticsProvider() : null;
+    }
+
+    getExpressionSemantics(jobExecution) {
+        let semantics = jobExecution && jobExecution.executionContext && jobExecution.executionContext.get(EXPRESSION_SEMANTICS_KEY);
+        return semantics || LEGACY_EXPRESSION_SEMANTICS;
+    }
+
+    // non-restartable jobs are not checked
+    isResumableWithCurrentSemantics(jobExecution) {
+        var job = jobExecution && jobExecution.jobInstance && this.getJobByName(jobExecution.jobInstance.jobName);
+        if (job && !job.isRestartable) {
+            return true;
+        }
+        var current = this.getCurrentExpressionSemantics();
+        return !current || this.getExpressionSemantics(jobExecution) === current;
+    }
+
+    /*moves the instance to "<key>|archived|<instance id>"; returns promise*/
+    archiveJobInstance(jobInstance, jobParameters) {
+        var key = this.generateJobInstanceKey(jobInstance.jobName, jobParameters);
+        return this.moveJobInstanceKey(key, key + "|archived|" + jobInstance.id, jobInstance);
+    }
+
+    moveJobInstanceKey(key, newKey, jobInstance) {
+        throw "JobRepository.moveJobInstanceKey function not implemented!"
+    }
+
     /*Create a JobExecution for a given  Job and JobParameters. If matching JobInstance already exists,
      * the job must be restartable and it's last JobExecution must *not* be
      * completed. If matching JobInstance does not exist yet it will be  created.*/
@@ -136,19 +173,20 @@ export class JobRepository {
                         }
                     });
 
-                    var executionContext = executions[executions.length - 1].executionContext;
+                    var lastExecution = executions[executions.length - 1];
+                    if (!this.isResumableWithCurrentSemantics(lastExecution)) {
+                        let semantics = this.getExpressionSemantics(lastExecution);
+                        log.warn("Job instance " + jobInstance.id + " of " + jobName + " was started with expression semantics " + semantics
+                            + ", the current ones are " + this.getCurrentExpressionSemantics() + ": it is kept and a new instance is started");
+                        return this.archiveJobInstance(jobInstance, jobParameters).then(()=>this.newJobInstanceAndContext(jobName, jobParameters, data));
+                    }
 
-                    return [jobInstance, executionContext];
+                    return [jobInstance, lastExecution.executionContext];
                 })
             }
 
             // no job found, create one
-            jobInstance = this.createJobInstance(jobName, jobParameters);
-            var executionContext = new ExecutionContext();
-            var dataModel = new DataModel();
-            dataModel._setNewState(data.createStateSnapshot());
-            executionContext.setData(dataModel);
-            return Promise.all([jobInstance, executionContext]);
+            return this.newJobInstanceAndContext(jobName, jobParameters, data);
         }).then(instanceAndExecutionContext=>{
             var jobExecution = new JobExecution(instanceAndExecutionContext[0], jobParameters);
             jobExecution.executionContext = instanceAndExecutionContext[1];
@@ -157,6 +195,19 @@ export class JobRepository {
         }).catch(e=>{
             throw e;
         })
+    }
+
+    newJobInstanceAndContext(jobName, jobParameters, data) {
+        var jobInstance = this.createJobInstance(jobName, jobParameters);
+        var executionContext = new ExecutionContext();
+        var dataModel = new DataModel();
+        dataModel._setNewState(data.createStateSnapshot());
+        executionContext.setData(dataModel);
+        var semantics = this.getCurrentExpressionSemantics();
+        if (semantics) {
+            executionContext.put(EXPRESSION_SEMANTICS_KEY, semantics);
+        }
+        return Promise.all([jobInstance, executionContext]);
     }
 
     getLastJobExecution(jobName, jobParameters) {

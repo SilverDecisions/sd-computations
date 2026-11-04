@@ -5,6 +5,8 @@ import {JobParametersInvalidException} from "./exceptions/job-parameters-invalid
 import {JobDataInvalidException} from "./exceptions/job-data-invalid-exception";
 import {JOB_EXECUTION_FLAG} from "./job-execution-flag";
 import {JobResult} from "./job-result";
+import {JobExpressionSemanticsException} from "./exceptions/job-expression-semantics-exception";
+import {EXPRESSION_SEMANTICS_KEY} from "./job-repository/job-repository";
 
 /**
  * Base class for jobs
@@ -86,6 +88,19 @@ export class Job {
             execution.failureExceptions.push(e);
             return execution;
         }).then(execution=>{
+            if (!this.jobRepository.isResumableWithCurrentSemantics(execution)) {
+                // semantics changed during the job: discard its results, never continue the instance
+                var semantics = this.jobRepository.getExpressionSemantics(execution);
+                log.error("Expression semantics changed during job execution " + execution.id + ": "
+                    + semantics + " -> " + this.jobRepository.getCurrentExpressionSemantics() + "; its results are not saved");
+                if (!execution.failureExceptions.some(f=>f instanceof JobExpressionSemanticsException)) {
+                    execution.failureExceptions.push(this.expressionSemanticsException(execution));
+                }
+                execution.status = JOB_STATUS.FAILED;
+                execution.exitStatus = JOB_STATUS.FAILED;
+                execution.executionContext.put(EXPRESSION_SEMANTICS_KEY, semantics + ";changed-during-execution");
+                jobResult = null;
+            }
             if(jobResult){
                 return this.jobRepository.saveJobResult(jobResult).then(()=>execution)
             }
@@ -163,11 +178,19 @@ export class Job {
 
     checkExecutionFlags(execution){
         return this.jobRepository.getJobExecutionFlag(execution.id).then(flag=>{
+            if (!this.jobRepository.isResumableWithCurrentSemantics(execution)) {
+                throw this.expressionSemanticsException(execution);
+            }
             if(JOB_EXECUTION_FLAG.STOP === flag){
                 execution.stop();
             }
             return execution
         })
+    }
+
+    expressionSemanticsException(execution) {
+        return new JobExpressionSemanticsException("Job execution [" + execution.id + "] was started with expression semantics "
+            + this.jobRepository.getExpressionSemantics(execution) + ", the current ones are " + this.jobRepository.getCurrentExpressionSemantics());
     }
 
     getResult(execution) {

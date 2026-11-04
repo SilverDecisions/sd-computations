@@ -1,4 +1,5 @@
 import {Utils, log} from "sd-utils";
+import {currentExpressionSemantics} from "./engine/expression-semantics";
 import {SensitivityAnalysisJob} from "./configurations/sensitivity-analysis/n-way/sensitivity-analysis-job";
 import {JobLauncher} from "./engine/job-launcher";
 import {JobWorker} from "./job-worker";
@@ -60,6 +61,7 @@ export class JobsManager extends JobExecutionListener {
         }
 
         this.initRepository();
+        this.jobRepository.expressionSemanticsProvider = currentExpressionSemantics;
 
         this.registerJobs();
 
@@ -235,16 +237,18 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
+    // copy: a listener may deregister itself during the loop
     beforeJob(jobExecution) {
         log.debug("beforeJob", this.useWorker, jobExecution);
-        this.jobExecutionListeners.forEach(l=>l.beforeJob(jobExecution));
+        this.jobExecutionListeners.slice().forEach(l=>l.beforeJob(jobExecution));
     }
 
     afterJob(jobExecution) {
         log.debug("afterJob", this.useWorker, jobExecution);
-        this.jobExecutionListeners.forEach(l=>l.afterJob(jobExecution));
+        this.jobExecutionListeners.slice().forEach(l=>l.afterJob(jobExecution));
         var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecution.id];
         if (promiseResolve) {
+            delete this.afterJobExecutionPromiseResolves[jobExecution.id];
             promiseResolve(jobExecution)
         }
 
@@ -253,24 +257,35 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
+    /*the worker did not run the execution: end it here (FAILED, endTime, error) and notify as any failed job*/
     onJobFatalError(jobExecutionId, error){
-        var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecutionId];
-        if (promiseResolve) {
-            this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
-                jobExecution.status = JOB_STATUS.FAILED;
-                if(error){
-                    jobExecution.failureExceptions.push(error);
-                }
-
-                return this.jobRepository.saveJobExecution(jobExecution).then(()=>{
-                    promiseResolve(jobExecution);
-                })
-            }).catch(e=>{
-                log.error(e);
-            })
-
-        }
         log.debug('onJobFatalError', jobExecutionId, error);
+        return this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
+            if (!jobExecution) {
+                log.error("Job execution not found after a fatal error in the worker: " + jobExecutionId, error);
+                var promiseResolve = this.afterJobExecutionPromiseResolves[jobExecutionId];
+                if (promiseResolve) {
+                    delete this.afterJobExecutionPromiseResolves[jobExecutionId];
+                    promiseResolve(null);
+                }
+                return null;
+            }
+            if (!jobExecution.isRunning()) {
+                return jobExecution;
+            }
+            jobExecution.status = JOB_STATUS.FAILED;
+            jobExecution.exitStatus = JOB_STATUS.FAILED;
+            if(error){
+                jobExecution.failureExceptions.push(error);
+            }
+            jobExecution.endTime = new Date();
+            return this.jobRepository.saveJobExecution(jobExecution).then(()=>{
+                this.afterJob(jobExecution);
+                return jobExecution;
+            });
+        }).catch(e=>{
+            log.error(e);
+        });
     }
 
 

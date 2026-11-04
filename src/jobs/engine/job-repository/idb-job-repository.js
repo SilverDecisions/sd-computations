@@ -75,6 +75,10 @@ export class IdbJobRepository extends JobRepository {
     }
 
 
+    moveJobInstanceKey(key, newKey, jobInstance){
+        return this.jobInstanceDao.move(key, newKey, jobInstance);
+    }
+
     removeJobInstance(jobInstance, jobParameters){
         var key = this.generateJobInstanceKey(jobInstance.jobName, jobParameters);
         return this.jobInstanceDao.remove(key).then(()=>{
@@ -384,6 +388,17 @@ class ObjectStoreDao {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name, 'readwrite');
             tx.objectStore(this.name).delete(key);
+            return tx.done;
+        });
+    }
+
+    // one transaction: the id index is unique
+    move(key, newKey, val) {
+        return this.dbPromise.then(db => {
+            const tx = db.transaction(this.name, 'readwrite');
+            const store = tx.objectStore(this.name);
+            store.delete(key);
+            store.put(val, newKey);
             return tx.done;
         });
     }

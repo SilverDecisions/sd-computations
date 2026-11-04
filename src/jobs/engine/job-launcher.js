@@ -3,6 +3,7 @@ import {JOB_STATUS} from "./job-status";
 import {Utils, log} from "sd-utils";
 import {JobParametersInvalidException} from "./exceptions/job-parameters-invalid-exception";
 import {JobDataInvalidException} from "./exceptions/job-data-invalid-exception";
+import {JobExpressionSemanticsException} from "./exceptions/job-expression-semantics-exception";
 
 export class JobLauncher {
 
@@ -54,7 +55,8 @@ export class JobLauncher {
 
     validate(job, jobParameters, data){
         return this.jobRepository.getLastJobExecution(job.name, jobParameters).then(lastExecution=>{
-            if (lastExecution != null) {
+            // other semantics: a new instance is started, no restart checks
+            if (lastExecution != null && this.jobRepository.isResumableWithCurrentSemantics(lastExecution)) {
                 if (!job.isRestartable) {
                     throw new JobRestartException("JobInstance already exists and is not restartable");
                 }
@@ -92,6 +94,12 @@ export class JobLauncher {
 
             if (jobExecution.status !== JOB_STATUS.STARTING) {
                 throw new JobRestartException("JobExecution [" + jobExecution.id + "] already started");
+            }
+
+            // worker with other semantics than the page; JobsManager.onJobFatalError ends the execution
+            if (!this.jobRepository.isResumableWithCurrentSemantics(jobExecution)) {
+                throw new JobExpressionSemanticsException("JobExecution [" + jobExecution.id + "] was created for expression semantics "
+                    + this.jobRepository.getExpressionSemantics(jobExecution) + ", the current ones are " + this.jobRepository.getCurrentExpressionSemantics());
             }
 
             var jobName = jobExecution.jobInstance.jobName;
