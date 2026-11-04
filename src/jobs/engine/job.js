@@ -89,9 +89,7 @@ export class Job {
             return execution;
         }).then(execution=>{
             if (!this.jobRepository.isResumableWithCurrentSemantics(execution)) {
-                // the expression semantics changed while the job ran (e.g. config(...) in an
-                // expression): the results of this execution are not saved and the instance is
-                // never continued (its profile no longer matches any context)
+                // semantics changed during the job: discard its results, never continue the instance
                 var semantics = this.jobRepository.getExpressionSemantics(execution);
                 log.error("Expression semantics changed during job execution " + execution.id + ": "
                     + semantics + " -> " + this.jobRepository.getCurrentExpressionSemantics() + "; its results are not saved");
@@ -178,7 +176,6 @@ export class Job {
         this.executionListeners.push(listener);
     }
 
-    /*stop flag, and the expression semantics (before every step and chunk)*/
     checkExecutionFlags(execution){
         return this.jobRepository.getJobExecutionFlag(execution.id).then(flag=>{
             if (!this.jobRepository.isResumableWithCurrentSemantics(execution)) {

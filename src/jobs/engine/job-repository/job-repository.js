@@ -11,9 +11,7 @@ import {DataModel} from "sd-model";
 import {JobResult} from "../job-result";
 import {LEGACY_EXPRESSION_SEMANTICS} from "../expression-semantics";
 
-// Execution context key of the expression semantics profile (expression-semantics.js)
-// a job instance was started with. A restartable job is continued only under the same
-// profile: results computed with different semantics are never combined.
+// Execution context key of the semantics profile; restartable jobs continue only under the same profile.
 export const EXPRESSION_SEMANTICS_KEY = "expressionSemantics";
 export {LEGACY_EXPRESSION_SEMANTICS};
 
@@ -21,8 +19,7 @@ export class JobRepository {
 
     jobByName = {};
 
-    // function returning the expression semantics profile of this context, taken each
-    // time it is needed (set by JobsManager); none: not recorded nor checked
+    // set by JobsManager; null: profiles are neither recorded nor checked
     expressionSemanticsProvider = null;
 
     registerJob(job) {
@@ -128,19 +125,16 @@ export class JobRepository {
         return jobName + "|" + JobKeyGenerator.generateKey(jobParameters);
     }
 
-    /*expression semantics profile of this context now, null if not checked*/
     getCurrentExpressionSemantics() {
         return this.expressionSemanticsProvider ? this.expressionSemanticsProvider() : null;
     }
 
-    /*profile a job execution was started with (executions without one: the legacy profile)*/
     getExpressionSemantics(jobExecution) {
         let semantics = jobExecution && jobExecution.executionContext && jobExecution.executionContext.get(EXPRESSION_SEMANTICS_KEY);
         return semantics || LEGACY_EXPRESSION_SEMANTICS;
     }
 
-    /*true if the job execution may be continued with the current expression semantics; jobs
-     * that are not restartable are never continued and are not checked*/
+    // non-restartable jobs are not checked
     isResumableWithCurrentSemantics(jobExecution) {
         var job = jobExecution && jobExecution.jobInstance && this.getJobByName(jobExecution.jobInstance.jobName);
         if (job && !job.isRestartable) {
@@ -150,9 +144,7 @@ export class JobRepository {
         return !current || this.getExpressionSemantics(jobExecution) === current;
     }
 
-    /*Keeps a job instance (its executions, with their semantics, and its result) under the
-     * key "<key>|archived|<instance id>", so that the job parameters address a new
-     * instance. returns promise*/
+    /*moves the instance to "<key>|archived|<instance id>"; returns promise*/
     archiveJobInstance(jobInstance, jobParameters) {
         var key = this.generateJobInstanceKey(jobInstance.jobName, jobParameters);
         return this.moveJobInstanceKey(key, key + "|archived|" + jobInstance.id, jobInstance);
@@ -183,7 +175,6 @@ export class JobRepository {
 
                     var lastExecution = executions[executions.length - 1];
                     if (!this.isResumableWithCurrentSemantics(lastExecution)) {
-                        // started with other expression semantics: keep that job and start a new instance
                         let semantics = this.getExpressionSemantics(lastExecution);
                         log.warn("Job instance " + jobInstance.id + " of " + jobName + " was started with expression semantics " + semantics
                             + ", the current ones are " + this.getCurrentExpressionSemantics() + ": it is kept and a new instance is started");

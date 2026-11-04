@@ -392,7 +392,7 @@ class ObjectStoreDao {
         });
     }
 
-    /*stores val under newKey instead of key, in one transaction (unique indexes allow one copy)*/
+    // one transaction: the id index is unique
     move(key, newKey, val) {
         return this.dbPromise.then(db => {
             const tx = db.transaction(this.name, 'readwrite');

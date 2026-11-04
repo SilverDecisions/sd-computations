@@ -61,7 +61,6 @@ export class JobsManager extends JobExecutionListener {
         }
 
         this.initRepository();
-        // taken each time it is needed: the Math.js configuration can change
         this.jobRepository.expressionSemanticsProvider = currentExpressionSemantics;
 
         this.registerJobs();
@@ -238,8 +237,7 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
-    // listeners may deregister themselves (JobInstanceManager does when its job
-    // completes): iterate over a copy so that none is skipped
+    // copy: a listener may deregister itself during the loop
     beforeJob(jobExecution) {
         log.debug("beforeJob", this.useWorker, jobExecution);
         this.jobExecutionListeners.slice().forEach(l=>l.beforeJob(jobExecution));
@@ -259,10 +257,7 @@ export class JobsManager extends JobExecutionListener {
         }
     }
 
-    /*The worker could not execute a job execution (e.g. it was refused for other expression
-     * semantics, or not found): nothing of the job ran there, so the execution is ended here
-     * (FAILED, endTime, the error) and saved, and the listeners and a pending run(...) promise
-     * get it as for any failed job. The job instance can then be run again.*/
+    /*the worker did not run the execution: end it here (FAILED, endTime, error) and notify as any failed job*/
     onJobFatalError(jobExecutionId, error){
         log.debug('onJobFatalError', jobExecutionId, error);
         return this.jobRepository.getJobExecutionById(jobExecutionId).then(jobExecution=>{
@@ -276,7 +271,6 @@ export class JobsManager extends JobExecutionListener {
                 return null;
             }
             if (!jobExecution.isRunning()) {
-                // already ended by the job (its listeners were notified)
                 return jobExecution;
             }
             jobExecution.status = JOB_STATUS.FAILED;

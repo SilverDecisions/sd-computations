@@ -1,7 +1,4 @@
-// A job worker whose expression engine has another configuration than the page
-// (test/specs/jobs/job-semantics.spec.js): Math.js 13+ absTol 0, older epsilon 1e-10.
-// Expressions such as "1e-15 > 0" (Math.js 15) or "1 == 1 + 1e-11" (Math.js 9) give
-// other values than with the defaults, so this worker must not compute the page's jobs.
+// Worker with another Math.js configuration than the page (job-semantics.spec.js).
 self.onmessage = function(oEvent) { //hack to get browserify bundle script src
 
     importScripts('/base/dist/sd-computations-vendor.js');

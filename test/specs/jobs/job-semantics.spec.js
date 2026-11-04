@@ -6,19 +6,15 @@ import {JOB_STATUS} from '../../../src/jobs/engine/job-status'
 import {ExpressionEngine} from "sd-expression-engine";
 import {DataModel} from "sd-model";
 
-// A stopped job is continued only under the expression semantics profile it was
-// started with (Math.js version and configuration, expression-semantics.js);
-// otherwise its instance is kept under another key and a new instance starts from
-// the beginning, so that results of different semantics are never combined. A worker
-// whose profile differs from the page's does not compute the page's jobs.
+// Continue / archive / refuse by expression semantics profile (expression-semantics.js).
 
 let fixtures = jasmine.getFixtures();
 const JOB = "probabilistic-sensitivity-analysis";
-// (the simple repository runs a job in microtasks only: the browser is blocked until it ends)
+// small: the simple repository blocks the browser for the whole job
 const RUNS = 100;
 const STOP_AT = 20;
 
-// another configuration of the same Math.js, and an expression whose value depends on it
+// another config of the same Math.js and an expression that depends on it
 const MAJOR = parseInt(ExpressionEngine.eval("version", false), 10);
 const OTHER_CONFIG = MAJOR >= 13 ? "config({absTol: 0})" : "config({epsilon: 1e-10})";
 const DEFAULT_CONFIG = MAJOR >= 13 ? "config({absTol: 1e-15})" : "config({epsilon: 1e-12})";
@@ -69,7 +65,7 @@ describe("Expression semantics profile", () => {
         expect(DEFAULT_PROFILE).toMatch(/^sd-expressions-1;mathjs-\d+\.\d+\.\d+;\{.+\}$/);
         expect(DEFAULT_PROFILE).toContain(";mathjs-" + ExpressionEngine.eval("version", false) + ";");
         if (MAJOR === 9) {
-            // sd-expression-engine 0.1.17 with its defaults: the profile of executions without one
+            // 0.1.17 defaults = profile of executions without one
             expect(DEFAULT_PROFILE).toBe(LEGACY_EXPRESSION_SEMANTICS);
         } else {
             expect(DEFAULT_PROFILE).not.toBe(LEGACY_EXPRESSION_SEMANTICS);
@@ -108,8 +104,7 @@ describe("Expression semantics profile", () => {
             expect(currentExpressionSemantics()).toBe(DEFAULT_PROFILE);
         });
 
-        // runs (or resumes) the job; stopAt: number of runs after which it is stopped
-        // (the stop flag is set when that progress is stored, so the job stops before its next chunk)
+        // stopAt: runs after which the STOP flag is set (job stops before its next chunk)
         function run(values, stopAt, data) {
             let updateProgress = repository.updateJobExecutionProgress;
             if (stopAt) {
@@ -178,7 +173,7 @@ describe("Expression semantics profile", () => {
                 expect(execution.status).toBe(JOB_STATUS.COMPLETED);
                 return rowsOf(repository, instance);
             }).then(rows => {
-                // the rows computed before the stop are continued, not recomputed
+                // rows before the stop are kept
                 expect(rows.slice(0, stoppedRows.length)).toEqual(stoppedRows);
             }).then(done, e => done.fail(e));
         }, 60000);
@@ -197,7 +192,6 @@ describe("Expression semantics profile", () => {
                 return run(values);
             }).then(r => {
                 expect(r.completed).toBe(true);
-                // all runs of the new instance, none of the stopped one
                 expect(r.data.rows.length).toBe(RUNS * r.data.policies.length);
                 return instanceAndExecution(repository, job, values);
             }).then(({instance, execution}) => {
@@ -206,7 +200,6 @@ describe("Expression semantics profile", () => {
                 expect(execution.executionContext.get(EXPRESSION_SEMANTICS_KEY)).toBe(otherProfile);
                 return conf.storedInstanceId(repository, key(values) + "|archived|" + old.id);
             }).then(archivedId => {
-                // the old job is kept as it was, under another key
                 expect(archivedId).toBe(old.id);
                 return lastExecution(repository, old);
             }).then(execution => {
@@ -241,7 +234,6 @@ describe("Expression semantics profile", () => {
                 } else {
                     expect(instance.id).not.toBe(a.id, "a new instance under " + DEFAULT_PROFILE);
                 }
-                // another configuration: never continued
                 ExpressionEngine.eval(OTHER_CONFIG, false);
                 return run(otherValues);
             }).then(r => {
@@ -256,7 +248,7 @@ describe("Expression semantics profile", () => {
         }, 90000);
 
         it("fails a job whose own expressions change the profile, saves none of its results and does not continue it", (done) => {
-            // the diagram changes the shared Math.js configuration in node code, evaluated in every run
+            // node code changes the shared config in every run
             let tree = loadTree("rockefellerWithParams.json");
             tree.trees[0].code += "\ncfg = " + OTHER_CONFIG;
             let data = new DataModel(tree);
@@ -274,7 +266,7 @@ describe("Expression semantics profile", () => {
                 return rowsOf(repository, instance);
             }).then(rows => {
                 expect(rows.length).toBe(0, "no rows saved");
-                // the configuration set by the diagram stays: a new run is a new instance, consistent from the start
+                // config set by the diagram stays: next run is a new, consistent instance
                 expect(currentExpressionSemantics()).not.toBe(DEFAULT_PROFILE);
                 return run(values, null, data);
             }).then(r => {
@@ -289,7 +281,6 @@ describe("Expression semantics profile", () => {
 });
 
 describe("Resuming jobs and expression semantics [idb repository, with a real Web Worker]", () => {
-    // the page has the default configuration; this worker another one
     let cmOther = new ComputationsManager({worker: {url: "/base/test/job-worker-other-semantics.worker.js"}});
     let cmGood = new ComputationsManager({worker: {url: "/base/test/job-worker.worker.js"}});
     let job = cmOther.getJobByName(JOB);
@@ -313,7 +304,6 @@ describe("Resuming jobs and expression semantics [idb repository, with a real We
         expect(execution.isRunning()).toBe(false);
         expect(String(execution.failureExceptions.map(e => e && e.message))).toContain("expression semantics");
         return repository.getJobExecutionById(execution.id).then(stored => {
-            // stored: status, end, diagnostics
             expect(stored.status).toBe(JOB_STATUS.FAILED);
             expect(stored.isRunning()).toBe(false);
             expect(String(stored.failureExceptions.map(e => e && e.message))).toContain("expression semantics");
@@ -367,10 +357,10 @@ describe("Resuming jobs and expression semantics [idb repository, with a real We
             expect(refused.lastJobExecution.isRunning()).toBe(false);
             return expectRefused(refused.lastJobExecution);
         }).then(() => new Promise((resolve, reject) => {
-            // again with the same, incompatible worker: refused again (not "already running")
+            // same incompatible worker: refused again, not "already running"
             cmOther.runJobWithInstanceManager(JOB, values, {onJobFailed: resolve, onJobCompleted: () => reject("completed")}).catch(reject);
         })).then(() => new Promise((resolve, reject) => {
-            // the compatible worker: the same instance is run and completes
+            // compatible worker completes the same instance
             cmGood.runJobWithInstanceManager(JOB, values, {
                 onJobCompleted: data => resolve(data),
                 onJobFailed: errors => reject(errors)
