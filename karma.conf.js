@@ -101,6 +101,10 @@ module.exports = function (config) {
 
         // start these browsers
         browsers: ['ChromeHeadless', 'Firefox'],
+        // `npm test`: headless Chrome without the sandbox (CI containers, root users)
+        customLaunchers: {
+            ChromeHeadlessCI: {base: 'ChromeHeadless', flags: ['--no-sandbox']}
+        },
         reporters: ['progress', 'coverage'],
         logLevel: config.LOG_WARN,
         singleRun: false,
