@@ -2,6 +2,7 @@ import {Utils} from "sd-utils";
 import {ExpressionEngine} from "sd-expression-engine";
 import {CalculateStep} from "../../n-way/steps/calculate-step";
 import {JobComputationException} from "../../../../engine/exceptions/job-computation-exception";
+import {ComputationsUtils} from "../../../../../computations-utils";
 
 export class ProbCalculateStep extends CalculateStep {
 
@@ -95,8 +96,6 @@ export class ProbCalculateStep extends CalculateStep {
             }else if(payoff.equals(highestPayoff)){
                 bestPolicyIndexes.push(i)
             }
-
-            jobResult.data.expectedValues[i] = ExpressionEngine.add(jobResult.data.expectedValues[i], ExpressionEngine.divide(payoff, numberOfRuns));
         });
 
         bestPolicyIndexes.forEach(policyIndex=>{
@@ -109,8 +108,26 @@ export class ProbCalculateStep extends CalculateStep {
     }
 
 
+    // The expected value of a policy is the mean of its payoffs over the runs.
+    // 1. Rows: each computed payoff is stored as a double, toFloat(payoff) ('n/a'
+    //    counts as 0). With the Math.js 15 engine toFloat is correctly rounded: the
+    //    error is at most half an ulp, i.e. at most 2^-53 of |payoff| when the result
+    //    is a normal double, at most half of the smallest positive subnormal double
+    //    (2^-1075, absolute) below the normal range, and a payoff beyond the double
+    //    range becomes +-Infinity. With 0.1.17 it is the double of its Fraction, whose
+    //    arithmetic is in doubles: no bound relative to exact evaluation is claimed.
+    // 2. Mean: ComputationsUtils.exactMean of those doubles is the double nearest to
+    //    their exact mean (one rounding, for any order, cancellation or magnitude,
+    //    finite whenever that mean is in the double range).
+    // (Accumulating add(expectedValue, divide(payoff, numberOfRuns)) with exact
+    // Fractions grows without limit: thousands of digits after 1000 runs.)
     postProcess(stepExecution, jobResult) {
-        jobResult.data.expectedValues = jobResult.data.expectedValues.map(v=>this.toFloat(v));
+        var numberOfRuns = stepExecution.getJobParameters().value("numberOfRuns");
+        var payoffsPerPolicy = jobResult.data.policies.map(()=>[]);
+        jobResult.data.rows.forEach(row=> {
+            payoffsPerPolicy[row.policyIndex].push(Utils.isString(row.payoff) ? 0 : row.payoff);
+        });
+        jobResult.data.expectedValues = payoffsPerPolicy.map(payoffs=>ComputationsUtils.exactMean(payoffs, numberOfRuns));
     }
 
 
