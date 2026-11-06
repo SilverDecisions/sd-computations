@@ -1,4 +1,5 @@
 [
+  "exact-sum-cases.json",
   "job-league-table.json",
   "job-n-way-sa.json",
   "job-probabilistic-sa.json",

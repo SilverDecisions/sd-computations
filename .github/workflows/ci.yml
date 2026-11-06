@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master, modernize]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build check (Node ${{ matrix.node }}, Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # 24: developer version (.nvmrc); 22: previous LTS
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Versions
+        run: node --version && npm --version
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Isolated copy: npm ci, build, artifacts (ES5, source maps), the bundles in
+      # a vm context (with the sd-* dist bundles), Karma in headless Chrome with
+      # the fresh vendor bundle and the job worker, tarball installed into a
+      # browserify + babelify consumer, compile error exit code
+      - name: npm run test:build
+        run: npm run test:build
+
+  windows-smoke:
+    name: Build smoke (Node ${{ matrix.node }}, Windows)
+    runs-on: windows-2025
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Versions
+        run: node --version && npm --version
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: npm run build
+        timeout-minutes: 10
+        run: npm run build
+
+      - name: Karma specs in headless Chrome with the fresh vendor bundle
+        run: npm test
+
+      - name: The build and the tests changed nothing outside dist/
+        shell: bash
+        run: |
+          changes="$(git status --porcelain --untracked-files=all -- . ':(exclude)dist')"
+          echo "$changes"
+          test -z "$changes"
+
+      - name: Build check in an isolated copy (without Karma and the consumer install)
+        run: node scripts/check-build.js --skip-karma --skip-consumer
